@@ -15,8 +15,8 @@ AI & Real-time: Google Gemini API, Socket.IO.
 📂 Cấu trúc dự án (Project Structure)
 Chúng ta sử dụng kiến trúc Service-Layered đơn giản hóa (Pragmatic Architecture).
 
-Plaintext
 
+plaint text 
 CNPM-FRIDAY/
 ├── docker-compose.yml       # File chạy toàn bộ hệ thống (DB, Backend, Frontend)
 ├── .github/                 # Chứa tài liệu hướng dẫn cho AI (Copilot)
@@ -40,6 +40,44 @@ CNPM-FRIDAY/
     │   ├── services/        # Gọi API Backend (Axios)
     │   ├── pages/           # Giao diện các trang
     │   └── components/      # Các thành phần UI tái sử dụng
+
+
+
+
+
+
+    Plaint text
+    CLUSTER 1: System Identity & Access
+    ├── Role (ADMIN, LECTURER, STUDENT)
+    ├── User
+    ├── Department
+    └── AuditLog
+    CLUSTER 2: Academic Management
+    ├── Semester
+    ├── Subject
+    ├── Syllabus
+    ├── AcademicClass
+    └── ClassEnrollment
+    CLUSTER 3: Project & Team
+    ├── Topic (Đề tài)
+    ├── Project
+    ├── Team
+    └── TeamMember
+    CLUSTER 4: Agile & Collaboration
+    ├── Sprint
+    ├── Task
+    ├── Meeting
+    ├── Channel
+    └── Message
+    CLUSTER 5: Milestones & Submissions
+    ├── Milestone
+    ├── Checkpoint
+    └── Submission
+    CLUSTER 6: Evaluation & Resources
+    ├── EvaluationCriterion
+    ├── Evaluation
+    ├── PeerReview
+    └── Resource
 🚀 Hướng dẫn Cài đặt & Chạy (Quick Start)
 Yêu cầu: Máy tính đã cài đặt Docker Desktop.
 
