@@ -1,20 +1,27 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/v1'; // Điều chỉnh theo route của bạn
+const api = axios.create({
+  baseURL: 'http://localhost:8000/api/v1',
+});
 
-// Tự động đính kèm Token vào mỗi request nếu có
-const getHeader = () => {
+// Thêm token vào header
+api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  return { headers: { Authorization: `Bearer ${token}` } };
-};
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 export const userService = {
-  // Lấy thông tin user hiện tại
-  getProfile: () => axios.get(`${API_URL}/users/me`, getHeader()),
-
-  // Cập nhật thông tin (Name, Phone)
-  updateProfile: (data) => axios.patch(`${API_URL}/users/me`, data, getHeader()),
-
-  // Đổi mật khẩu
-  changePassword: (data) => axios.post(`${API_URL}/users/change-password`, data, getHeader()),
+    //update profile
+  updateProfile: (data) => api.patch('/users/me', data),
+  // thay đổi mật khẩu
+  changePassword: (data) => api.post('/users/change-password', data),
+  // thêm avatar
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/users/upload-avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
 };
