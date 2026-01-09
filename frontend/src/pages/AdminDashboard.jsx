@@ -18,22 +18,22 @@ const { Header, Sider, Content } = Layout;
 const AdminDashboard = () => {
   const [form] = Form.useForm();
   const [collapsed, setCollapsed] = useState(false);
-  const [selectedKey, setSelectedKey] = useState('1'); // 1: Subjects, 2: Semester, 3: Users
+  const [selectedKey, setSelectedKey] = useState('1'); // 1: Môn học, 2: Học kỳ, 3: Người dùng
 
-  // Data States
+  // Trạng thái dữ liệu
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
 
-  // Query States
+  // Trạng thái truy vấn
   const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
-  // Modal States
+  // Trạng thái Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingKey, setEditingKey] = useState(null);
 
-  // --- FETCH DATA ---
+  // --- LẤY DỮ LIỆU ---
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -52,14 +52,14 @@ const AdminDashboard = () => {
         res = await userService.getAll(params);
       }
 
-      // Check format
+      // Kiểm tra định dạng
       const resultData = Array.isArray(res.data) ? res.data : [];
       setData(resultData);
 
-      // Since backend doesn't return total count yet, we pseudo-paginate or assume simplistic
-      // For real pagination, backend response should include total.
-      // Current implementation returns full list or limit list. 
-      // We will assume data length is total for this simplified version unless backend supports count.
+      // Vì backend chưa trả về tổng số lượng, nên ta giả lập phân trang hoặc giả định đơn giản
+      // Để phân trang thực tế, phản hồi backend cần bao gồm tổng số.
+      // Triển khai hiện tại trả về toàn bộ danh sách hoặc danh sách giới hạn.
+      // Ta sẽ giả định độ dài dữ liệu là tổng số cho phiên bản đơn giản này trừ khi backend hỗ trợ đếm.
       setTotal(resultData.length); // Placeholder, improving later
 
     } catch (err) {
@@ -75,7 +75,7 @@ const AdminDashboard = () => {
     fetchData();
   }, [selectedKey, pagination.current, searchText]);
 
-  // --- ACTIONS ---
+  // --- HÀNH ĐỘNG ---
   const handleDelete = (id) => {
     Modal.confirm({
       title: 'Confirm Delete?',
@@ -86,7 +86,7 @@ const AdminDashboard = () => {
         try {
           if (selectedKey === '1') await subjectService.delete(id);
           else if (selectedKey === '2') await classService.delete(id);
-          // Users typically soft de-activated, implementation pending
+          // Người dùng thường được vô hiệu hóa mềm, đang chờ triển khai
 
           message.success('Deleted successfully');
           fetchData();
@@ -106,7 +106,7 @@ const AdminDashboard = () => {
         if (editingKey) await classService.update(editingKey, values);
         else await classService.create(values);
       }
-      // User create usually involves more logic (password), keeping simple for now
+      // Tạo người dùng thường liên quan đến nhiều logic hơn (mật khẩu), giữ đơn giản cho lúc này
 
       message.success(editingKey ? 'Updated successfully' : 'Created successfully');
       setIsModalOpen(false);
@@ -116,7 +116,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // --- COLUMNS ---
+  // --- CỘT ---
   const getColumns = () => {
     const commonActions = {
       title: 'Actions',
@@ -137,21 +137,21 @@ const AdminDashboard = () => {
       )
     };
 
-    if (selectedKey === '1') { // SUBJECTS
+    if (selectedKey === '1') { // MÔN HỌC
       return [
         { title: 'Course Code', dataIndex: 'subject_code', key: 'subject_code' },
         { title: 'Subject Name', dataIndex: 'subject_name', key: 'subject_name' },
         { title: 'Dept ID', dataIndex: 'dept_id', key: 'dept_id', align: 'center' },
         commonActions
       ];
-    } else if (selectedKey === '2') { // CLASSES
+    } else if (selectedKey === '2') { // LỚP HỌC
       return [
         { title: 'Class Code', dataIndex: 'class_code', key: 'class_code' },
         { title: 'Subject', dataIndex: 'subject_name', key: 'subject_name' },
         { title: 'Lecturer', dataIndex: 'lecturer_name', key: 'lecturer_name' },
         commonActions
       ];
-    } else if (selectedKey === '3') { // USERS
+    } else if (selectedKey === '3') { // NGƯỜI DÙNG
       return [
         { title: 'Email', dataIndex: 'email', key: 'email' },
         { title: 'Full Name', dataIndex: 'full_name', key: 'full_name' },
