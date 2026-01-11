@@ -48,7 +48,12 @@ class Department(Base):
         PG_UUID(as_uuid=True), ForeignKey("users.user_id", use_alter=True), nullable=True
     )
 
-    users: Mapped[list["User"]] = relationship("User", back_populates="department")
+    users: Mapped[list["User"]] = relationship(
+        "User", 
+        back_populates="department", 
+        foreign_keys="[User.dept_id]",
+        primaryjoin="Department.dept_id==User.dept_id"
+    )
     subjects: Mapped[list["Subject"]] = relationship("Subject", back_populates="department")
     topics: Mapped[list["Topic"]] = relationship("Topic", back_populates="department")
     dept_head: Mapped[Optional["User"]] = relationship("User", foreign_keys=[dept_head_id])
@@ -75,7 +80,7 @@ class User(Base):
 
     # Relationships
     role: Mapped["Role"] = relationship("Role", back_populates="users")
-    department: Mapped[Optional["Department"]] = relationship("Department", back_populates="users")
+    department: Mapped[Optional["Department"]] = relationship("Department", back_populates="users", foreign_keys=[dept_id])
 
     system_settings: Mapped[list["SystemSetting"]] = relationship("SystemSetting", back_populates="updated_by_user")
     audit_logs: Mapped[list["AuditLog"]] = relationship("AuditLog", back_populates="actor")
@@ -259,6 +264,7 @@ class Team(Base):
     peer_reviews: Mapped[list["PeerReview"]] = relationship("PeerReview", back_populates="team", cascade="all, delete-orphan")
     mentoring_logs: Mapped[list["MentoringLog"]] = relationship("MentoringLog", back_populates="team")
     resources: Mapped[list["Resource"]] = relationship("Resource", back_populates="team")
+    team_tasks: Mapped[list["Task"]] = relationship("Task", back_populates="team")
 
 
 class TeamMember(Base):
@@ -295,6 +301,7 @@ class Sprint(Base):
 class Task(Base):
     __tablename__ = "tasks"
     task_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    team_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("teams.team_id", ondelete="CASCADE"), nullable=True)  # FIX: Made nullable
     sprint_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("sprints.sprint_id", ondelete="CASCADE"), nullable=True)
     title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -304,6 +311,7 @@ class Task(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     due_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    team: Mapped[Optional["Team"]] = relationship("Team", back_populates="team_tasks")
     sprint: Mapped[Optional["Sprint"]] = relationship("Sprint", back_populates="tasks")
     assignee: Mapped[Optional["User"]] = relationship("User", back_populates="assigned_tasks")
 
