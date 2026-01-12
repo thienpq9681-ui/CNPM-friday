@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from app.core.config import settings
 
 # Setup password hashing (Bcrypt)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt", "sha256_crypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

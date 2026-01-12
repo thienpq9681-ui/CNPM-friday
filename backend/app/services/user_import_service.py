@@ -1,120 +1,134 @@
-"""
-Pydantic schemas for User Import from Excel/CSV.
-"""
-from typing import List, Optional
-from uuid import UUID
+import pandas as pd
+import io
+from fastapi import UploadFile, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from typing import List, Tuple
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from app.schemas.user_import import UserImportRow, UserImportStats, UserImportResultRow
+from app.models.all_models import User, Role, Department
+from passlib.context import CryptContext
 
+# Use sha256_crypt to avoid bcrypt 72-byte limit issues in this environment
+import_pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
-# ==========================================
-# REQUEST SCHEMAS
-# ==========================================
-
-
-class UserImportRow(BaseModel):
-    """Schema for a single user row in import file."""
-    email: EmailStr = Field(..., description="User email (unique)")
-    full_name: str = Field(..., max_length=255, description="Full name")
-    role_name: str = Field(..., description="Role: ADMIN, STAFF, HEAD_DEPT, LECTURER, STUDENT")
-    dept_name: Optional[str] = Field(None, description="Department name (optional for ADMIN/STAFF)")
-    phone: Optional[str] = Field(None, max_length=20, description="Phone number")
+async def parse_import_file(file: UploadFile) -> List[UserImportRow]:
+    """Parse uploaded file into list of UserImportRow objects."""
+    filename = file.filename.lower()
+    content = await file.read()
     
-    @validator('role_name')
-    def validate_role_name(cls, v):
-        """Validate role name is one of allowed values."""
-        allowed_roles = ['ADMIN', 'STAFF', 'HEAD_DEPT', 'LECTURER', 'STUDENT']
-        if v.upper() not in allowed_roles:
-            raise ValueError(f'Role must be one of: {", ".join(allowed_roles)}')
-        return v.upper()
+    try:
+        if filename.endswith(('.xlsx', '.xls')):
+            df = pd.read_excel(io.BytesIO(content), dtype={'phone': str})
+        elif filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(content), dtype={'phone': str})
+        else:
+            raise HTTPException(status_code=400, detail="Invalid file format")
+            
+        # Clean column names (strip whitespace, lowercase)
+        df.columns = [str(c).strip().lower() for c in df.columns]
+        
+        # Validate required columns
+        required_cols = {'email', 'full_name', 'role_name'}
+        if not required_cols.issubset(df.columns):
+            missing = required_cols - set(df.columns)
+            raise ValueError(f"Missing required columns: {missing}")
+            
+        users = []
+        for index, row in df.iterrows():
+            # Replace NaN with None
+            row_dict = row.where(pd.notnull(row), None).to_dict()
+            
+            # Create Pydantic model (performs validation)
+            try:
+                user = UserImportRow(**row_dict)
+                users.append(user)
+            except Exception as e:
+                # We catch parsing errors here or let them bubble up? 
+                # Better to fail fast or collect errors? 
+                # For now let's fail fast to keep it simple, or maybe skip?
+                # The schema says we track "failed" rows.
+                raise ValueError(f"Row {index+2}: {str(e)}")
+                
+        return users
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
+
+async def import_users(db: AsyncSession, users: List[UserImportRow]) -> Tuple[UserImportStats, List[UserImportResultRow]]:
+    """Process import of users."""
+    stats = UserImportStats(total_rows=len(users))
+    results = []
     
-    @validator('dept_name')
-    def validate_dept_for_role(cls, v, values):
-        """Department is required for LECTURER and STUDENT roles."""
-        role = values.get('role_name', '').upper()
-        if role in ['LECTURER', 'STUDENT'] and not v:
-            raise ValueError(f'Department is required for {role} role')
-        return v
+    # Cache roles/depts to avoid repeated DB calls
+    roles = (await db.execute(select(Role))).scalars().all()
+    role_map = {r.role_name: r.role_id for r in roles}
     
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "email": "student@university.edu",
-                "full_name": "Nguyễn Văn A",
-                "role_name": "STUDENT",
-                "dept_name": "Software Engineering",
-                "phone": "0912345678"
-            }
-        }
-
-
-# ==========================================
-# RESPONSE SCHEMAS
-# ==========================================
-
-
-class UserImportResultRow(BaseModel):
-    """Result for a single imported user."""
-    row_number: int
-    email: EmailStr
-    status: str  # "success", "error", "skipped"
-    user_id: Optional[UUID] = None
-    message: Optional[str] = None
+    depts = (await db.execute(select(Department))).scalars().all()
+    dept_map = {d.dept_name: d.dept_id for d in depts}
     
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "row_number": 1,
-                "email": "student@university.edu",
-                "status": "success",
-                "user_id": "550e8400-e29b-41d4-a716-446655440000",
-                "message": "User created successfully"
-            }
-        }
-
-
-class UserImportResponse(BaseModel):
-    """Response for bulk user import."""
-    total_rows: int
-    successful: int
-    failed: int
-    skipped: int
-    results: List[UserImportResultRow]
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "total_rows": 100,
-                "successful": 95,
-                "failed": 3,
-                "skipped": 2,
-                "results": [
-                    {
-                        "row_number": 1,
-                        "email": "student1@university.edu",
-                        "status": "success",
-                        "user_id": "550e8400-e29b-41d4-a716-446655440000",
-                        "message": "User created successfully"
-                    },
-                    {
-                        "row_number": 2,
-                        "email": "duplicate@university.edu",
-                        "status": "skipped",
-                        "message": "Email already exists"
-                    }
-                ]
-            }
-        }
-
-
-# ==========================================
-# INTERNAL SCHEMAS
-# ==========================================
-
-
-class UserImportStats(BaseModel):
-    """Internal schema for tracking import statistics."""
-    total_rows: int = 0
-    successful: int = 0
-    failed: int = 0
-    skipped: int = 0
+    for i, user_in in enumerate(users, start=1):
+        result_row = UserImportResultRow(
+            row_number=i,
+            email=user_in.email,
+            status="pending"
+        )
+        
+        try:
+            # 1. Check existing email
+            stmt = select(User).where(User.email == user_in.email)
+            existing = (await db.execute(stmt)).scalars().first()
+            
+            if existing:
+                stats.skipped += 1
+                result_row.status = "skipped"
+                result_row.message = "Email already exists"
+                results.append(result_row)
+                continue
+                
+            # 2. Get Role ID
+            role_id = role_map.get(user_in.role_name)
+            if not role_id:
+                # Should not happen due to validator, but safe check
+                raise ValueError(f"Role {user_in.role_name} not found in DB")
+                
+            # 3. Get Dept ID (optional)
+            dept_id = None
+            if user_in.dept_name:
+                dept_id = dept_map.get(user_in.dept_name)
+                # If dept doesn't exist, maybe create it? Or error?
+                # Let's assume error for now to enforce consistency
+                if not dept_id and user_in.role_name in ['LECTURER', 'STUDENT']:
+                     raise ValueError(f"Department {user_in.dept_name} not found")
+            
+            # 4. Create User
+            # Default password: CollabSphere@{user_email_prefix}
+            username = user_in.email.split('@')[0]
+            password = f"CollabSphere@{username}"
+            
+            new_user = User(
+                email=user_in.email,
+                full_name=user_in.full_name,
+                password_hash=import_pwd_context.hash(password),
+                role_id=role_id,
+                dept_id=dept_id,
+                phone=user_in.phone,
+                is_active=True
+            )
+            db.add(new_user)
+            await db.flush() # to get ID
+            
+            stats.successful += 1
+            result_row.status = "success"
+            result_row.user_id = new_user.user_id
+            result_row.message = "User created successfully"
+            
+        except Exception as e:
+            stats.failed += 1
+            result_row.status = "failed"
+            result_row.message = str(e)
+            
+        results.append(result_row)
+        
+    await db.commit()
+    return stats, results

@@ -48,7 +48,7 @@ class Department(Base):
         PG_UUID(as_uuid=True), ForeignKey("users.user_id", use_alter=True), nullable=True
     )
 
-    users: Mapped[list["User"]] = relationship("User", back_populates="department")
+    users: Mapped[list["User"]] = relationship("User", back_populates="department", foreign_keys="[User.dept_id]")
     subjects: Mapped[list["Subject"]] = relationship("Subject", back_populates="department")
     topics: Mapped[list["Topic"]] = relationship("Topic", back_populates="department")
     dept_head: Mapped[Optional["User"]] = relationship("User", foreign_keys=[dept_head_id])
@@ -75,7 +75,7 @@ class User(Base):
 
     # Relationships
     role: Mapped["Role"] = relationship("Role", back_populates="users")
-    department: Mapped[Optional["Department"]] = relationship("Department", back_populates="users")
+    department: Mapped[Optional["Department"]] = relationship("Department", back_populates="users", foreign_keys=[dept_id])
 
     notifications: Mapped[list["Notification"]] = relationship(
         "Notification", back_populates="user", cascade="all, delete-orphan"
@@ -107,11 +107,8 @@ class User(Base):
     peer_reviews_given: Mapped[list["PeerReview"]] = relationship("PeerReview", back_populates="reviewer", foreign_keys="PeerReview.reviewer_id")
     peer_reviews_received: Mapped[list["PeerReview"]] = relationship("PeerReview", back_populates="reviewee", foreign_keys="PeerReview.reviewee_id")
 
-    avatar_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     bio: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    
-    role_id: Mapped[int] = mapped_column(Integer, ForeignKey("roles.role_id"))
 
 class SystemSetting(Base):
     """System settings model."""
