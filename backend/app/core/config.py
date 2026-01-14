@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Database
-    DATABASE_URL: str = "postgresql://collabsphere:collabsphere_password@localhost:5432/collabsphere_db"
+    DATABASE_URL: str = "postgresql+asyncpg://collabsphere:collabsphere_password@localhost:5432/collabsphere_db"
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
