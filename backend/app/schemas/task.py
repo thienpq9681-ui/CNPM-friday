@@ -34,10 +34,11 @@ class TaskBase(BaseModel):
 class TaskCreate(TaskBase):
     """Schema for creating a Task."""
     title: str
-    sprint_id: int
+    sprint_id: Optional[int] = None
     description: Optional[str] = None
-    assigned_to: Optional[str] = None
+    assigned_to: Optional[UUID] = None
     priority: str = "MEDIUM"
+    due_date: Optional[datetime] = None
 
 
 class TaskUpdate(BaseModel):
@@ -45,29 +46,11 @@ class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
-    assigned_to: Optional[str] = None
+    assigned_to: Optional[UUID] = None
     priority: Optional[str] = None
-
-
-class TaskCreate(TaskBase):
-    """Schema for creating a Task."""
-    title: str
-    team_id: Optional[int] = None  # FIX: Made optional since model allows nullable
-    sprint_id: Optional[int] = None
-    assignee_id: Optional[UUID] = None
-    due_date: Optional[datetime] = None
-
-
-class TaskUpdate(BaseModel):
-    """Schema for updating a Task."""
-    title: Optional[str] = None
-    description: Optional[str] = None
-    priority: Optional[TaskPriority] = None
-    status: Optional[TaskStatus] = None
-    assignee_id: Optional[UUID] = None
     due_date: Optional[datetime] = None
     
-    # FIX BUG-09: Add case-insensitive validator for status
+    # Enable case-insensitive validator for status and priority if needed
     @field_validator('status', mode='before')
     @classmethod
     def convert_status_to_uppercase(cls, v):
@@ -86,12 +69,16 @@ class TaskUpdate(BaseModel):
 class TaskResponse(TaskBase):
     """Schema for Task response."""
     task_id: int
-    team_id: Optional[int] = None  # FIX: Made optional
     sprint_id: Optional[int] = None
-    assignee_id: Optional[UUID] = None
+    assigned_to: Optional[UUID] = None
     status: Optional[str] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None
     due_date: Optional[datetime] = None
+    created_by: Optional[str] = None # Added field for convenience (mapped manually in API)
 
     class Config:
         from_attributes = True
+
+
+
