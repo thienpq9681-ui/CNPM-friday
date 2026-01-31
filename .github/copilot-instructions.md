@@ -154,29 +154,55 @@ backend/app/
 - **Real-time updates** via Socket.IO for chat and notifications
 - **Role-based UI** rendering (different views for students vs lecturers)
 
-### Recent Fixes (January 28, 2026)
-**✅ HOÀN THÀNH - V1 Architecture + Registration/Login Working:**
-1. ✅ **Reverted to V1 Architecture**
-   - Using `/api/v1/` versioning (as per team's existing code structure)
-   - `API_V1_STR = "/api/v1"` in config.py
-   - All auth code in `app/api/v1/` folder
-   - Frontend `.env` uses `VITE_API_URL=http://localhost:8000/api/v1`
+### Recent Fixes (January 31, 2026 - Phase 1 MVP Complete)
+**✅ HOÀN THÀNH PHASE 1 - MVP Foundation Ready:**
 
-2. ✅ **Admin Endpoints in V1**
-   - `POST /api/v1/admin/init-db` creates tables and seeds 5 roles
-   - `GET /api/v1/admin/db-status` checks database health
-   - Integrated into `app/api/v1/api.py` main router
-
-3. ✅ **Registration & Login Working**
+#### ✅ Core Infrastructure (Completed)
+1. ✅ **V1 Architecture + Auth**
+   - Using `/api/v1/` versioning structure
    - `POST /api/v1/auth/register` - Create user with role_id
    - `POST /api/v1/auth/login` - OAuth2 token endpoint
    - `GET /api/v1/users/me` - Get authenticated user profile
+   - JWT tokens (30-min expiration), role-based access control
 
-**Cách sử dụng:**
-- **Init Database**: `POST http://localhost:8000/api/v1/admin/init-db`
-- **Register**: `POST http://localhost:8000/api/v1/auth/register` với role_id 1-5
-- **Login**: `POST http://localhost:8000/api/v1/auth/login` (form data)
-- **Frontend**: Tự động kết nối đến `http://localhost:8000/api/v1`
+2. ✅ **Database (Supabase PostgreSQL)**
+   - Connected via pooler (IPv6 DNS issue resolved)
+   - 5 roles: Admin(1), Staff(2), HeadDept(3), Lecturer(4), Student(5)
+   - 40+ SQLAlchemy models defined (no modifications needed)
+   - Async session management implemented
+   - `POST /api/v1/admin/init-db` endpoint working
+
+3. ✅ **Documentation & Folder Structure**
+   - Giao_Viec/ folder: Complete Phase 1 guide with code templates
+   - Giao_Viec_2/ folder: Phase 2 planning + ready-to-use FE services
+   - All schema definitions synced (TopicResponse added)
+   - Cross-references fixed (INDEX.md cleaned up)
+
+#### ✅ Phase 1 Deliverables (Ready to Test)
+- **20 API endpoints** (auth, users, topics, teams, tasks, sprints, etc.)
+- **BE code structure**: Schemas + Services + Endpoints complete
+- **FE services**: 4 ready-to-use files (apiClient.js + 3 service files)
+- **2 Dashboard scaffolds**: Admin/Lecturer/Student role-based routing
+
+#### 🎯 Current Team Status
+- **BE1 (Lead)**: Architecture oversight, code review, blocker resolution
+- **BE2**: Topics module endpoints + testing
+- **BE3**: Teams module endpoints + testing
+- **BE4**: Tasks/Sprints endpoints + testing
+- **FE1**: Lecturer dashboard (topics management)
+- **FE2**: Student dashboard (teams + projects)
+
+#### 🚀 Next Phase (Jan 31+)
+- **Phase 2 Focus**: DAO Layer integration (DB optimization), FE dashboard completion
+- **Phase 3 Planning**: Sprint board, notifications, real-time chat (documented in PHASE3_PLAN.md)
+- **Code Ready**: Copy from Giao_Viec_2/CODE/fe/ into frontend/src/services/
+
+#### 📋 How to Use
+1. **Init Database**: `POST http://localhost:8000/api/v1/admin/init-db`
+2. **Register Test User**: `POST http://localhost:8000/api/v1/auth/register` (role_id 1-5)
+3. **Login**: `POST http://localhost:8000/api/v1/auth/login` (form data: username, password, grant_type)
+4. **Copy FE Services**: `Giao_Viec_2/CODE/fe/* → frontend/src/services/`
+5. **Follow Giao_Viec_2/INDEX.md** for Phase 2 task assignments
 
 ### AI Features
 - **Google Gemini API** for mentoring suggestions in `MentoringLog.ai_suggestions`

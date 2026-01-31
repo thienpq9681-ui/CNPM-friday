@@ -76,7 +76,7 @@ api_router.include_router(topics_router, prefix="/topics", tags=["topics"])
 ```
 
 ### Step 4: Test All Endpoints (1.5 hours)
-Use `DAILY_CHECKLIST.md` → FLOW 1: Topic Creation & Approval
+Use `TESTING_GUIDE.md` → FLOW 1: Topic Creation & Approval
 
 **Success Criteria:**
 - [x] Create topic → 200, status=DRAFT
@@ -151,7 +151,7 @@ api_router.include_router(teams_router, prefix="/teams", tags=["teams"])
 ```
 
 ### Step 4: Test All Endpoints (1.5 hours)
-Use `DAILY_CHECKLIST.md` → FLOW 2: Team Creation
+Use `TESTING_GUIDE.md` → FLOW 2: Team Creation
 
 **Success Criteria:**
 - [x] Create team → join_code generated (e.g., "A1B2C3")
@@ -227,7 +227,7 @@ api_router.include_router(tasks_router, prefix="/tasks", tags=["tasks"])
 ```
 
 ### Step 4: Test Workflow (1.5 hours)
-Use `DAILY_CHECKLIST.md` → FLOW 3: Task Management
+Use `TESTING_GUIDE.md` → FLOW 3: Task Management
 
 **Success Criteria:**
 - [x] Create task → status=TODO
@@ -414,7 +414,7 @@ After each component is done:
 **Stuck on something?**
 
 1. Check `STARTER_BE{2,3,4}.py` files - they have working code!
-2. Run `DAILY_CHECKLIST.md` test flows
+2. Run `TESTING_GUIDE.md` test flows
 3. Check database directly:
    ```bash
    docker-compose exec db psql -U collabsphere -d collabsphere_db
