@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Layout, Typography, Button, Card, Row, Col, Progress, List, Table,
+    Alert, Layout, Typography, Button, Card, Row, Col, Progress, List, Table,
     Avatar, Space, Badge, Input, Upload, Timeline, Tag, Divider,
     Modal, Form, Select, DatePicker, message, Dropdown, Popover
 } from 'antd';
@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useAuth, resolveRoleName } from '../components/AuthContext';
+import { lecturerTopicsService } from '../services/lecturerTopicsService';
 import './DashboardPage.css';
 import './TopicManagement.css';
 
@@ -100,6 +101,71 @@ const getProjectIcon = (project) => {
         return <ProjectOutlined />;
     }
     return <ProjectOutlined />;
+};
+
+const normalizeStatus = (value) => (value ? String(value).toUpperCase() : 'UNKNOWN');
+
+const formatTopicStatus = (value) => {
+    const normalized = normalizeStatus(value);
+    switch (normalized) {
+        case 'APPROVED':
+            return 'Approved';
+        case 'REJECTED':
+            return 'Rejected';
+        case 'PENDING':
+            return 'Pending';
+        case 'DRAFT':
+            return 'Draft';
+        default:
+            return normalized;
+    }
+};
+
+const buildTopicRow = (topic) => {
+    const rawStatus = normalizeStatus(topic?.status);
+    return {
+        key: String(topic?.topic_id ?? topic?.id ?? Math.random()),
+        topicId: topic?.topic_id ?? topic?.id,
+        author: topic?.created_by || 'Unknown',
+        title: topic?.title || 'Untitled',
+        description: topic?.description || '',
+        requirements: topic?.requirements || '',
+        team: topic?.team || topic?.team_name || '-',
+        status: formatTopicStatus(rawStatus),
+        rawStatus,
+        createdAt: topic?.created_at,
+        approvedBy: topic?.approved_by,
+        approvedAt: topic?.approved_at,
+    };
+};
+
+const extractErrorMessage = (error, fallback) => {
+    if (error?.response?.data?.detail) {
+        return error.response.data.detail;
+    }
+    if (error?.message) {
+        return error.message;
+    }
+    return fallback;
+};
+
+const isAuthError = (error) => error?.response?.status === 401;
+const isForbiddenError = (error) => error?.response?.status === 403;
+
+const getStatusTag = (status) => {
+    const normalized = normalizeStatus(status);
+    switch (normalized) {
+        case 'APPROVED':
+            return <Tag color="green">Approved</Tag>;
+        case 'REJECTED':
+            return <Tag color="red">Rejected</Tag>;
+        case 'PENDING':
+            return <Tag color="gold">Pending</Tag>;
+        case 'DRAFT':
+            return <Tag color="blue">Draft</Tag>;
+        default:
+            return <Tag>{normalized}</Tag>;
+    }
 };
 
 const TopicManagement = () => {
@@ -249,6 +315,14 @@ const TopicManagement = () => {
     const [hoveredNav, setHoveredNav] = useState(null);
     const [activeTopicTab, setActiveTopicTab] = useState('list');
     const [topicSearch, setTopicSearch] = useState('');
+    const [topicStatusFilter, setTopicStatusFilter] = useState('ALL');
+    const [topicsLoading, setTopicsLoading] = useState(false);
+    const [topicsError, setTopicsError] = useState('');
+    const [topicActionLoading, setTopicActionLoading] = useState({});
+    const [topicDetailOpen, setTopicDetailOpen] = useState(false);
+    const [selectedTopic, setSelectedTopic] = useState(null);
+    const [evaluationOpen, setEvaluationOpen] = useState(false);
+    const [evaluationForm] = Form.useForm();
 
     const navButtonStyles = (key, { active, danger } = {}) => ({
         textAlign: collapsed ? 'center' : 'left',
@@ -544,117 +618,101 @@ const TopicManagement = () => {
         'Drone Delivery'
     ];
 
-    const initialTopics = [
-        {
-            key: '1',
-            author: 'Nguyen Van A',
-            title: 'Smart Attendance Tracker',
-            team: 'Team Alpha',
-            status: 'Draft',
-        },
-        {
-            key: '2',
-            author: 'Tran Thi B',
-            title: 'Campus Shuttle Optimizer',
-            team: 'Team Beta',
-            status: 'Pending',
-        },
-        {
-            key: '3',
-            author: 'Le Van C',
-            title: 'AI Tutor Companion',
-            team: 'Team Gamma',
-            status: 'Approved',
-        },
-        {
-            key: '4',
-            author: 'Pham Thi D',
-            title: 'Research Lab Portal',
-            team: 'Team Delta',
-            status: 'Draft',
-        },
-        {
-            key: '5',
-            author: 'Hoang Van E',
-            title: 'Library Queue Manager',
-            team: 'Team Sigma',
-            status: 'Pending',
-        },
-        {
-            key: '6',
-            author: 'Do Thi F',
-            title: 'Thesis Progress Hub',
-            team: 'Team Omega',
-            status: 'Approved',
-        },
-    ];
-
-    const initialProposals = [
-        {
-            key: 'p1',
-            team: 'Team Alpha',
-            title: 'Smart Attendance Tracker',
-            author: 'Nguyen Van A',
-        },
-        {
-            key: 'p2',
-            team: 'Team Beta',
-            title: 'Campus Shuttle Optimizer',
-            author: 'Tran Thi B',
-        },
-        {
-            key: 'p3',
-            team: 'Team Gamma',
-            title: 'AI Tutor Companion',
-            author: 'Le Van C',
-        },
-        {
-            key: 'p4',
-            team: 'Team Delta',
-            title: 'Research Lab Portal',
-            author: 'Pham Thi D',
-        },
-        {
-            key: 'p5',
-            team: 'Team Sigma',
-            title: 'Library Queue Manager',
-            author: 'Hoang Van E',
-        },
-        {
-            key: 'p6',
-            team: 'Team Omega',
-            title: 'Thesis Progress Hub',
-            author: 'Do Thi F',
-        },
-    ];
+    const initialTopics = [];
 
     const [topicRows, setTopicRows] = useState(initialTopics);
-    const [proposalRows, setProposalRows] = useState(initialProposals);
+
+    const proposalRows = useMemo(() => topicRows.filter((item) => {
+        const status = item.rawStatus || normalizeStatus(item.status);
+        return status === 'DRAFT' || status === 'PENDING';
+    }), [topicRows]);
+
+    const handleRefreshTopics = useCallback(async () => {
+        setTopicsLoading(true);
+        setTopicsError('');
+        try {
+            const response = await lecturerTopicsService.listTopics();
+            const payload = Array.isArray(response?.data?.topics)
+                ? response.data.topics
+                : Array.isArray(response?.data)
+                    ? response.data
+                    : [];
+            const mappedTopics = payload.map((topic) => buildTopicRow(topic));
+            setTopicRows(mappedTopics);
+        } catch (error) {
+            if (isAuthError(error)) {
+                message.error('Session expired. Please sign in again.');
+                logout();
+                navigate('/login', { replace: true });
+                return;
+            }
+            const errorMessage = extractErrorMessage(error, 'Failed to load topics');
+            setTopicsError(errorMessage);
+            message.error(errorMessage);
+        } finally {
+            setTopicsLoading(false);
+        }
+    }, [logout, navigate]);
+
+    useEffect(() => {
+        handleRefreshTopics();
+    }, [handleRefreshTopics]);
 
     const filteredTopics = useMemo(() => {
         const query = topicSearch.trim().toLowerCase();
         if (!query) {
-            return topicRows;
+            return topicRows.filter((item) => (
+                topicStatusFilter === 'ALL'
+                    ? true
+                    : normalizeStatus(item.rawStatus || item.status) === topicStatusFilter
+            ));
         }
         return topicRows.filter((item) => (
             item.author?.toLowerCase().includes(query)
             || item.title?.toLowerCase().includes(query)
             || item.team?.toLowerCase().includes(query)
             || item.status?.toLowerCase().includes(query)
+        )).filter((item) => (
+            topicStatusFilter === 'ALL'
+                ? true
+                : normalizeStatus(item.rawStatus || item.status) === topicStatusFilter
         ));
-    }, [topicRows, topicSearch]);
+    }, [topicRows, topicSearch, topicStatusFilter]);
 
     const filteredProposals = useMemo(() => {
         const query = topicSearch.trim().toLowerCase();
+        const statusMatch = (item) => {
+            if (topicStatusFilter === 'ALL') {
+                return true;
+            }
+            return normalizeStatus(item.rawStatus || item.status) === topicStatusFilter;
+        };
         if (!query) {
-            return proposalRows;
+            return proposalRows.filter(statusMatch);
         }
         return proposalRows.filter((item) => (
             item.author?.toLowerCase().includes(query)
             || item.title?.toLowerCase().includes(query)
             || item.team?.toLowerCase().includes(query)
-        ));
-    }, [proposalRows, topicSearch]);
+        )).filter(statusMatch);
+    }, [proposalRows, topicSearch, topicStatusFilter]);
+
+    const openTopicDetail = (record) => {
+        setSelectedTopic(record);
+        setTopicDetailOpen(true);
+    };
+
+    const openEvaluationForm = (record) => {
+        setSelectedTopic(record);
+        evaluationForm.resetFields();
+        evaluationForm.setFieldsValue({
+            team_id: null,
+            project_id: null,
+            score: null,
+            feedback: '',
+        });
+        setEvaluationOpen(true);
+    };
 
     const topicColumns = [
         {
@@ -676,14 +734,17 @@ const TopicManagement = () => {
             title: 'Status',
             dataIndex: 'status',
             key: 'status',
+            render: (_value, record) => getStatusTag(record.rawStatus || record.status),
         },
         {
             title: 'Activity',
             key: 'activity',
-            width: 180,
+            width: 240,
             align: 'center',
             render: (_value, record) => (
                 <Space size="small">
+                    <Button size="small" onClick={() => openTopicDetail(record)}>View</Button>
+                    <Button size="small" onClick={() => openEvaluationForm(record)}>Evaluate</Button>
                     <Button size="small" onClick={() => openEditTopic(record)}>Edit</Button>
                     <Button size="small" danger onClick={() => handleDeleteTopic(record.key)}>Delete</Button>
                 </Space>
@@ -705,12 +766,44 @@ const TopicManagement = () => {
         {
             title: 'Activity',
             key: 'activity',
-            width: 180,
+            width: 200,
             align: 'center',
             render: (_value, record) => (
                 <Space size="small">
-                    <Button size="small" type="primary" onClick={() => handleApproveProposal(record)}>Approve</Button>
-                    <Button size="small" danger onClick={() => handleRejectProposal(record.key)}>Reject</Button>
+                    <Button size="small" onClick={() => openTopicDetail(record)}>View</Button>
+                    <Button
+                        size="small"
+                        type="primary"
+                        loading={!!topicActionLoading[record.topicId]}
+                        onClick={() => {
+                            Modal.confirm({
+                                title: 'Approve topic?',
+                                content: `Approve "${record.title}"?`,
+                                okText: 'Approve',
+                                cancelText: 'Cancel',
+                                onOk: () => handleApproveProposal(record),
+                            });
+                        }}
+                    >
+                        Approve
+                    </Button>
+                    <Button
+                        size="small"
+                        danger
+                        loading={!!topicActionLoading[record.topicId]}
+                        onClick={() => {
+                            Modal.confirm({
+                                title: 'Reject topic?',
+                                content: `Reject "${record.title}"?`,
+                                okText: 'Reject',
+                                okButtonProps: { danger: true },
+                                cancelText: 'Cancel',
+                                onOk: () => handleRejectProposal(record),
+                            });
+                        }}
+                    >
+                        Reject
+                    </Button>
                 </Space>
             ),
         },
@@ -773,10 +866,11 @@ const TopicManagement = () => {
 
     const handleSaveTopic = async () => {
         const values = await topicForm.validateFields();
+        const rawStatus = normalizeStatus(values.status);
         if (editingTopic) {
             setTopicRows((prev) => prev.map((item) => (
                 item.key === editingTopic.key
-                    ? { ...item, ...values }
+                    ? { ...item, ...values, status: formatTopicStatus(rawStatus), rawStatus }
                     : item
             )));
             message.success('Topic updated');
@@ -784,6 +878,8 @@ const TopicManagement = () => {
             const newTopic = {
                 key: String(Date.now()),
                 ...values,
+                status: formatTopicStatus(rawStatus),
+                rawStatus,
             };
             setTopicRows((prev) => [newTopic, ...prev]);
             message.success('Topic created');
@@ -797,23 +893,93 @@ const TopicManagement = () => {
         message.success('Topic deleted');
     };
 
-    const handleApproveProposal = (record) => {
-        const approvedTopic = {
-            key: String(Date.now()),
-            author: record.author || 'Student',
-            title: record.title,
-            team: record.team,
-            status: 'Approved',
-        };
-        setProposalRows((prev) => prev.filter((item) => item.key !== record.key));
-        setTopicRows((prev) => [approvedTopic, ...prev]);
-        setActiveTopicTab('list');
-        message.success('Proposal approved');
+    const handleApproveProposal = async (record) => {
+        if (!record?.topicId) {
+            message.error('Missing topic id');
+            return;
+        }
+        setTopicActionLoading((prev) => ({ ...prev, [record.topicId]: true }));
+        try {
+            await lecturerTopicsService.approveTopic(record.topicId);
+            setTopicRows((prev) => prev.map((item) => (
+                item.topicId === record.topicId
+                    ? { ...item, status: formatTopicStatus('APPROVED'), rawStatus: 'APPROVED' }
+                    : item
+            )));
+            setActiveTopicTab('list');
+            message.success('Topic approved');
+        } catch (error) {
+            if (isAuthError(error)) {
+                message.error('Session expired. Please sign in again.');
+                logout();
+                navigate('/login', { replace: true });
+                return;
+            }
+            if (isForbiddenError(error)) {
+                message.error(extractErrorMessage(error, 'You do not have permission to approve topics.'));
+                return;
+            }
+            message.error(extractErrorMessage(error, 'Failed to approve topic'));
+        } finally {
+            setTopicActionLoading((prev) => ({ ...prev, [record.topicId]: false }));
+        }
     };
 
-    const handleRejectProposal = (key) => {
-        setProposalRows((prev) => prev.filter((item) => item.key !== key));
-        message.success('Proposal rejected');
+    const handleRejectProposal = async (record) => {
+        if (!record?.topicId) {
+            message.error('Missing topic id');
+            return;
+        }
+        setTopicActionLoading((prev) => ({ ...prev, [record.topicId]: true }));
+        try {
+            await lecturerTopicsService.rejectTopic(record.topicId);
+            setTopicRows((prev) => prev.map((item) => (
+                item.topicId === record.topicId
+                    ? { ...item, status: formatTopicStatus('REJECTED'), rawStatus: 'REJECTED' }
+                    : item
+            )));
+            message.success('Topic rejected');
+        } catch (error) {
+            if (isAuthError(error)) {
+                message.error('Session expired. Please sign in again.');
+                logout();
+                navigate('/login', { replace: true });
+                return;
+            }
+            if (isForbiddenError(error)) {
+                message.error(extractErrorMessage(error, 'You do not have permission to reject topics.'));
+                return;
+            }
+            message.error(extractErrorMessage(error, 'Failed to reject topic'));
+        } finally {
+            setTopicActionLoading((prev) => ({ ...prev, [record.topicId]: false }));
+        }
+    };
+
+    const handleEvaluationSubmit = async () => {
+        if (!selectedTopic?.topicId) {
+            message.error('Missing topic id');
+            return;
+        }
+        try {
+            const values = await evaluationForm.validateFields();
+            await lecturerTopicsService.createEvaluation(selectedTopic.topicId, values);
+            message.success('Evaluation submitted');
+            setEvaluationOpen(false);
+            evaluationForm.resetFields();
+        } catch (error) {
+            if (isAuthError(error)) {
+                message.error('Session expired. Please sign in again.');
+                logout();
+                navigate('/login', { replace: true });
+                return;
+            }
+            if (isForbiddenError(error)) {
+                message.error(extractErrorMessage(error, 'You do not have permission to create evaluations.'));
+                return;
+            }
+            message.error(extractErrorMessage(error, 'Failed to submit evaluation'));
+        }
     };
 
     const deleteProject = (id) => {
@@ -863,7 +1029,7 @@ const TopicManagement = () => {
                             open={isNotificationOpen}
                             onOpenChange={setNotificationOpen}
                             overlayStyle={{ padding: 0 }}
-                            arrowPointAtCenter
+                            arrow={{ pointAtCenter: true }}
                             getPopupContainer={() => notificationAnchorRef.current || document.body}
                         >
                             <Badge dot offset={[-5, 5]}>
@@ -1029,7 +1195,7 @@ const TopicManagement = () => {
 
                     <Card
                         className="topic-create-card"
-                        bordered={false}
+                        variant="borderless"
                         style={{
                             background: '#ebe7e7',
                             borderRadius: 12,
@@ -1069,21 +1235,50 @@ const TopicManagement = () => {
                                 Student proposals
                             </Button>
                         </Space>
-                        <Input
-                            prefix={<SearchOutlined />}
-                            placeholder="Search a topic..."
-                            className="topic-search"
-                            style={{ maxWidth: 280 }}
-                            value={topicSearch}
-                            onChange={(event) => setTopicSearch(event.target.value)}
-                        />
+                        <Space>
+                            <Select
+                                value={topicStatusFilter}
+                                onChange={setTopicStatusFilter}
+                                style={{ minWidth: 150 }}
+                            >
+                                <Select.Option value="ALL">All statuses</Select.Option>
+                                <Select.Option value="DRAFT">Draft</Select.Option>
+                                <Select.Option value="PENDING">Pending</Select.Option>
+                                <Select.Option value="APPROVED">Approved</Select.Option>
+                                <Select.Option value="REJECTED">Rejected</Select.Option>
+                            </Select>
+                            <Input
+                                prefix={<SearchOutlined />}
+                                placeholder="Search a topic..."
+                                className="topic-search"
+                                style={{ maxWidth: 280 }}
+                                value={topicSearch}
+                                onChange={(event) => setTopicSearch(event.target.value)}
+                            />
+                        </Space>
                     </div>
 
-                    <Card bordered={false} className="topic-table-card" style={{ borderRadius: 12 }}>
+                    {topicsError && (
+                        <Alert
+                            type="error"
+                            showIcon
+                            message="Unable to load topics"
+                            description={topicsError}
+                            action={(
+                                <Button size="small" onClick={handleRefreshTopics}>
+                                    Retry
+                                </Button>
+                            )}
+                            style={{ marginBottom: 12 }}
+                        />
+                    )}
+
+                    <Card variant="borderless" className="topic-table-card" style={{ borderRadius: 12 }}>
                         <Table
                             className="topic-table"
                             columns={activeTopicTab === 'proposals' ? proposalColumns : topicColumns}
                             dataSource={activeTopicTab === 'proposals' ? filteredProposals : filteredTopics}
+                            loading={topicsLoading}
                             pagination={false}
                             size="small"
                             tableLayout="fixed"
@@ -1099,7 +1294,8 @@ const TopicManagement = () => {
                         }}
                         onOk={handleSaveTopic}
                         okText={editingTopic ? 'Save' : 'Create'}
-                        destroyOnClose
+                        destroyOnHidden
+                        forceRender
                     >
                         <Form layout="vertical" form={topicForm}>
                             <Form.Item
@@ -1129,6 +1325,65 @@ const TopicManagement = () => {
                                     <Select.Option value="Pending">Pending</Select.Option>
                                     <Select.Option value="Approved">Approved</Select.Option>
                                 </Select>
+                            </Form.Item>
+                        </Form>
+                    </Modal>
+
+                    <Modal
+                        title="Topic details"
+                        open={topicDetailOpen}
+                        onCancel={() => setTopicDetailOpen(false)}
+                        footer={null}
+                        destroyOnHidden
+                    >
+                        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                            <Text><strong>Title:</strong> {selectedTopic?.title || '-'}</Text>
+                            <Text><strong>Author:</strong> {selectedTopic?.author || '-'}</Text>
+                            <Text><strong>Status:</strong> {formatTopicStatus(selectedTopic?.rawStatus || selectedTopic?.status)}</Text>
+                            <Text><strong>Description:</strong> {selectedTopic?.description || 'No description'}</Text>
+                            <Text><strong>Requirements:</strong> {selectedTopic?.requirements || 'No requirements'}</Text>
+                            <Text><strong>Created at:</strong> {selectedTopic?.createdAt ? dayjs(selectedTopic.createdAt).format('MMM DD, YYYY HH:mm') : '-'}</Text>
+                            <Text><strong>Approved by:</strong> {selectedTopic?.approvedBy || '-'}</Text>
+                            <Text><strong>Approved at:</strong> {selectedTopic?.approvedAt ? dayjs(selectedTopic.approvedAt).format('MMM DD, YYYY HH:mm') : '-'}</Text>
+                        </Space>
+                    </Modal>
+
+                    <Modal
+                        title="Create evaluation"
+                        open={evaluationOpen}
+                        onCancel={() => {
+                            setEvaluationOpen(false);
+                            evaluationForm.resetFields();
+                        }}
+                        onOk={handleEvaluationSubmit}
+                        okText="Submit"
+                        destroyOnHidden
+                        forceRender
+                    >
+                        <Form layout="vertical" form={evaluationForm}>
+                            <Form.Item
+                                label="Team ID"
+                                name="team_id"
+                                rules={[{ required: true, message: 'Please enter team id' }]}
+                            >
+                                <Input placeholder="e.g. 1" />
+                            </Form.Item>
+                            <Form.Item
+                                label="Project ID"
+                                name="project_id"
+                                rules={[{ required: true, message: 'Please enter project id' }]}
+                            >
+                                <Input placeholder="e.g. 2" />
+                            </Form.Item>
+                            <Form.Item
+                                label="Score"
+                                name="score"
+                                rules={[{ required: true, message: 'Please enter score' }]}
+                            >
+                                <Input placeholder="e.g. 8.5" />
+                            </Form.Item>
+                            <Form.Item label="Feedback" name="feedback">
+                                <Input.TextArea rows={3} placeholder="Optional feedback" />
                             </Form.Item>
                         </Form>
                     </Modal>
@@ -1257,8 +1512,9 @@ const TopicManagement = () => {
                 }}
                 footer={null}
                 width={520}
-                destroyOnClose
-                bodyStyle={{ paddingTop: 0 }}
+                destroyOnHidden
+                styles={{ body: { paddingTop: 0 } }}
+                forceRender
             >
                 <div style={{ marginBottom: 16 }}>
                     <Text type="secondary">Add milestones to keep the project timeline aligned.</Text>

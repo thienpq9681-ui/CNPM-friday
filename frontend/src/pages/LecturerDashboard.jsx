@@ -642,7 +642,7 @@ const LecturerDashboard = () => {
                             open={isNotificationOpen}
                             onOpenChange={setNotificationOpen}
                             overlayStyle={{ padding: 0 }}
-                            arrowPointAtCenter
+                            arrow={{ pointAtCenter: true }}
                             getPopupContainer={() => notificationAnchorRef.current || document.body}
                         >
                             <Badge dot offset={[-5, 5]}>
@@ -795,12 +795,12 @@ const LecturerDashboard = () => {
                     background: '#f5f5f5',
                     minHeight: 'auto'
                 }}>
-                    <Card className="hero-card hero-placeholder dashboard-card" bordered={false} />
+                    <Card className="hero-card hero-placeholder dashboard-card" variant="borderless" />
 
                     <Row gutter={16} className="stats-row">
                         {stats.map((stat) => (
                             <Col key={stat.title} xs={24} sm={8}>
-                                <Card className="stat-card dashboard-card" bordered={false}>
+                                <Card className="stat-card dashboard-card" variant="borderless">
                                     <div className="stat-content">
                                         <div>
                                             <Text className="stat-title">{stat.title}</Text>
@@ -824,7 +824,7 @@ const LecturerDashboard = () => {
                         onWheel={handleProjectWheel}
                     >
                         {projects.map((project, index) => (
-                            <Card key={`${project.title}-${index}`} className="project-card dashboard-card" bordered={false}>
+                            <Card key={`${project.title}-${index}`} className="project-card dashboard-card" variant="borderless">
                                 <div className="project-thumb" />
                                 <Title level={5} style={{ marginTop: 16 }}>{project.title}</Title>
                                 <Text type="secondary">{project.subtitle}</Text>
@@ -950,8 +950,8 @@ const LecturerDashboard = () => {
                 }}
                 footer={null}
                 width={520}
-                destroyOnClose
-                bodyStyle={{ paddingTop: 0 }}
+                destroyOnHidden
+                styles={{ body: { paddingTop: 0 } }}
             >
                 <div style={{ marginBottom: 16 }}>
                     <Text type="secondary">Add milestones to keep the project timeline aligned.</Text>
