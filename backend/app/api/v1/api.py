@@ -25,7 +25,8 @@ from app.api.v1.academic_classes import router as ac_router
 api_router.include_router(ac_router, prefix="/academic-classes", tags=["academic-classes"])
 
 # Topics & Evaluation
-from app.api.v1.topics import router as topics_router
+# Topics & Evaluation
+from app.api.v1.endpoints.topic import router as topics_router
 api_router.include_router(topics_router, prefix="/topics", tags=["topics"])
 
 # Teams

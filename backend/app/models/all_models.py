@@ -439,13 +439,19 @@ class EvaluationCriterion(Base):
 class Evaluation(Base):
     __tablename__ = "evaluations"
     evaluation_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    submission_id: Mapped[int] = mapped_column(Integer, ForeignKey("submissions.submission_id", ondelete="CASCADE"))
+    submission_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("submissions.submission_id", ondelete="CASCADE"), nullable=True)
     evaluator_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"))
+    team_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("teams.team_id", ondelete="CASCADE"), nullable=True) # Added
+    topic_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("topics.topic_id"), nullable=True) # Added
+    project_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("projects.project_id"), nullable=True) # Added
+    
     total_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    score: Mapped[Optional[float]] = mapped_column(Float, nullable=True) # Alias to match TopicService
     feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    submission: Mapped["Submission"] = relationship("Submission", back_populates="evaluations")
+    submission: Mapped[Optional["Submission"]] = relationship("Submission", back_populates="evaluations")
     evaluator: Mapped["User"] = relationship("User", back_populates="evaluations")
     evaluation_details: Mapped[list["EvaluationDetail"]] = relationship("EvaluationDetail", back_populates="evaluation", cascade="all, delete-orphan")
 

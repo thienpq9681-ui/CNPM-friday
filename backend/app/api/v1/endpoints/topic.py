@@ -1,167 +1,105 @@
-"""
-FastAPI endpoints for Topic (Project Proposal) management.
-Ticket: BE-PROJ-01
-
-Status Workflow: draft → pending → approved (or rejected)
-- Lecturer creates topics (status=draft)
-- Lecturer submits for approval (draft→pending)
-- Head of Department approves/rejects (pending→approved/rejected)
-"""
-from typing import Optional
-from uuid import UUID
-
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from fastapi import APIRouter, HTTPException, Depends, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from datetime import datetime, timezone
+from typing import Optional
 
-from app.api import deps
-from app.models.all_models import Topic, User
-from app.schemas.project import TopicCreate, TopicUpdate, TopicResponse, TopicListResponse
+from app.db.session import get_db
+from app.api.deps import get_current_user
+from app.models.all_models import User, Topic, Evaluation
+from app.schemas.topic import (
+    TopicCreate, TopicUpdate, TopicResponse, EvaluationCreate, EvaluationResponse
+)
+from app.dao.topic_dao import TopicDAO
 
 router = APIRouter()
 
+# ============================================================================
+# TOPICS ENDPOINTS
+# ============================================================================
 
-# ==========================================
-# TOPIC CRUD ENDPOINTS
-# ==========================================
-
-@router.post("/", response_model=TopicResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=201)
 async def create_topic(
-    topic_in: TopicCreate,
-    db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    topic: TopicCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    Create a new Topic (Project Proposal).
-    Only Lecturers can create topics.
-    Initial status is 'draft'.
+    Create a new topic (Lecturer only)
     """
-    # Check if user is a lecturer
-    if current_user.role.role_name.upper() != "LECTURER":
+    if current_user.role_id != 4:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only lecturers can create topics"
         )
     
-    # Create topic with creator_id from JWT
-    topic = Topic(
-        title=topic_in.title,
-        description=topic_in.description,
-        objectives=topic_in.objectives,
-        tech_stack=topic_in.tech_stack,
-        dept_id=topic_in.dept_id,
-        creator_id=current_user.user_id,
-        status="draft",
-    )
-    db.add(topic)
-    await db.commit()
-    await db.refresh(topic)
+    dao = TopicDAO(db)
+    new_topic = await dao.create_topic(topic, current_user.user_id)
     
-    # Build response with creator name
-    return TopicResponse(
-        topic_id=topic.topic_id,
-        title=topic.title,
-        description=topic.description,
-        objectives=topic.objectives,
-        tech_stack=topic.tech_stack,
-        creator_id=topic.creator_id,
-        dept_id=topic.dept_id,
-        status=topic.status or "draft",
-        created_at=topic.created_at,
-        creator_name=current_user.full_name,
-    )
+    return {
+        "topic_id": new_topic.topic_id,
+        "title": new_topic.title,
+        "description": new_topic.description,
+        "requirements": new_topic.requirements,
+        "objectives": new_topic.objectives,
+        "tech_stack": new_topic.tech_stack,
+        "status": new_topic.status,
+        "created_by": current_user.full_name,
+        "creator_id": new_topic.creator_id,
+        "created_at": new_topic.created_at
+    }
 
-
-@router.get("/", response_model=TopicListResponse)
-async def list_topics(
-    dept_id: Optional[int] = Query(None, description="Filter by department"),
-    status: Optional[str] = Query(None, description="Filter by status: draft, pending, approved, rejected"),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+@router.get("")
+async def get_topics(
+    status_filter: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    List all topics with optional filters.
-    - Lecturers can see their own topics (all statuses)
-    - Students can only see 'approved' topics
-    - Head of Department can see all topics in their department
+    Get topics list with caching and relationships optimized via DAO
     """
-    query = select(Topic).options(selectinload(Topic.creator))
+    dao = TopicDAO(db)
     
-    # Apply role-based filtering
-    user_role = current_user.role.role_name.upper()
-    
-    if user_role == "STUDENT":
-        # Students can only see approved topics
-        query = query.where(Topic.status == "approved")
-    elif user_role == "LECTURER":
-        # Lecturers see their own topics or approved topics
-        query = query.where(
-            (Topic.creator_id == current_user.user_id) | (Topic.status == "approved")
-        )
-    elif user_role == "HEAD_DEPT":
-        # Head of dept sees all in their department
-        if current_user.dept_id:
-            query = query.where(Topic.dept_id == current_user.dept_id)
-    # ADMIN can see all
-    
-    # Apply filters
-    if dept_id is not None:
-        query = query.where(Topic.dept_id == dept_id)
-    if status is not None:
-        query = query.where(Topic.status == status)
-    
-    # Get total count
-    count_query = select(func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
-    total = total_result.scalar() or 0
-    
-    # Apply pagination
-    query = query.offset((page - 1) * page_size).limit(page_size)
-    query = query.order_by(Topic.created_at.desc())
-    
-    result = await db.execute(query)
-    topics = result.scalars().all()
-    
-    # Build response
-    items = []
-    for topic in topics:
-        items.append(TopicResponse(
-            topic_id=topic.topic_id,
-            title=topic.title,
-            description=topic.description,
-            objectives=topic.objectives,
-            tech_stack=topic.tech_stack,
-            creator_id=topic.creator_id,
-            dept_id=topic.dept_id,
-            status=topic.status or "draft",
-            created_at=topic.created_at,
-            creator_name=topic.creator.full_name if topic.creator else None,
-        ))
-    
-    return TopicListResponse(
-        items=items,
-        total=total,
-        page=page,
-        page_size=page_size,
-    )
+    filter_status = status_filter
+    if current_user.role_id == 5: # Student
+        filter_status = "APPROVED"
+        if status_filter and status_filter != "APPROVED":
+             return {"topics": [], "total": 0}
 
+    topics = await dao.get_all_topics(status=filter_status)
+    
+    topics_response = []
+    for t in topics:
+        topics_response.append({
+            "topic_id": t.topic_id,
+            "title": t.title,
+            "description": t.description,
+            "requirements": t.requirements,
+            "objectives": t.objectives,
+            "tech_stack": t.tech_stack,
+            "status": t.status,
+            "created_by": t.creator.full_name if t.creator else "Unknown",
+            "creator_id": t.creator_id,
+            "dept_id": t.dept_id,
+            "created_at": t.created_at
+        })
+    
+    return {
+        "topics": topics_response,
+        "total": len(topics_response)
+    }
 
-@router.get("/{topic_id}", response_model=TopicResponse)
-async def get_topic(
+@router.get("/{topic_id}")
+async def get_topic_detail(
     topic_id: int,
-    db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
-    """Get topic details by ID."""
-    result = await db.execute(
-        select(Topic)
-        .options(selectinload(Topic.creator))
-        .where(Topic.topic_id == topic_id)
-    )
-    topic = result.scalar_one_or_none()
+    """
+    Get topic details by ID
+    """
+    dao = TopicDAO(db)
+    topic = await dao.get_topic_by_id(topic_id)
     
     if not topic:
         raise HTTPException(
@@ -169,274 +107,123 @@ async def get_topic(
             detail="Topic not found"
         )
     
-    # Check access rights
-    user_role = current_user.role.role_name.upper()
-    if user_role == "STUDENT" and topic.status != "approved":
+    if current_user.role_id == 5 and topic.status != "APPROVED":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only view approved topics"
         )
     
-    return TopicResponse(
-        topic_id=topic.topic_id,
-        title=topic.title,
-        description=topic.description,
-        objectives=topic.objectives,
-        tech_stack=topic.tech_stack,
-        creator_id=topic.creator_id,
-        dept_id=topic.dept_id,
-        status=topic.status or "draft",
-        created_at=topic.created_at,
-        creator_name=topic.creator.full_name if topic.creator else None,
-    )
+    approver_name = None
+    if topic.approved_by:
+        approver_query = select(User).where(User.user_id == topic.approved_by)
+        approver_result = await db.execute(approver_query)
+        approver = approver_result.scalar()
+        if approver:
+            approver_name = approver.full_name
+            
+    return {
+        "topic_id": topic.topic_id,
+        "title": topic.title,
+        "description": topic.description,
+        "requirements": topic.requirements,
+        "objectives": topic.objectives,
+        "tech_stack": topic.tech_stack,
+        "status": topic.status,
+        "created_by": topic.creator.full_name if topic.creator else "Unknown",
+        "creator_id": topic.creator_id,
+        "dept_id": topic.dept_id,
+        "created_at": topic.created_at,
+        "approved_by": approver_name,
+        "approved_at": topic.approved_at
+    }
 
-
-@router.put("/{topic_id}", response_model=TopicResponse)
-async def update_topic(
-    topic_id: int,
-    topic_in: TopicUpdate,
-    db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
-):
-    """
-    Update a topic.
-    Only the creator (lecturer) can update their own topics.
-    Cannot update after topic is approved.
-    """
-    result = await db.execute(
-        select(Topic)
-        .options(selectinload(Topic.creator))
-        .where(Topic.topic_id == topic_id)
-    )
-    topic = result.scalar_one_or_none()
-    
-    if not topic:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Topic not found"
-        )
-    
-    # Check ownership
-    if topic.creator_id != current_user.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only update your own topics"
-        )
-    
-    # Cannot update approved topics
-    if topic.status == "approved":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot update approved topics"
-        )
-    
-    # Update fields
-    update_data = topic_in.model_dump(exclude_unset=True)
-    # Don't allow status change via update endpoint
-    update_data.pop("status", None)
-    
-    for field, value in update_data.items():
-        setattr(topic, field, value)
-    
-    await db.commit()
-    await db.refresh(topic)
-    
-    return TopicResponse(
-        topic_id=topic.topic_id,
-        title=topic.title,
-        description=topic.description,
-        objectives=topic.objectives,
-        tech_stack=topic.tech_stack,
-        creator_id=topic.creator_id,
-        dept_id=topic.dept_id,
-        status=topic.status or "draft",
-        created_at=topic.created_at,
-        creator_name=topic.creator.full_name if topic.creator else None,
-    )
-
-
-@router.delete("/{topic_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_topic(
-    topic_id: int,
-    db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
-):
-    """
-    Delete a topic.
-    Only the creator can delete their own draft/rejected topics.
-    Cannot delete approved/pending topics.
-    """
-    result = await db.execute(
-        select(Topic).where(Topic.topic_id == topic_id)
-    )
-    topic = result.scalar_one_or_none()
-    
-    if not topic:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Topic not found"
-        )
-    
-    # Check ownership
-    if topic.creator_id != current_user.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only delete your own topics"
-        )
-    
-    # Cannot delete approved or pending topics
-    if topic.status in ("approved", "pending"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot delete topics with status '{topic.status}'"
-        )
-    
-    await db.delete(topic)
-    await db.commit()
-    return None
-
-
-# ==========================================
-# STATUS WORKFLOW ENDPOINTS
-# ==========================================
-
-@router.post("/{topic_id}/submit", response_model=TopicResponse)
-async def submit_topic(
-    topic_id: int,
-    db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
-):
-    """
-    Submit topic for approval (draft → pending).
-    Only the creator can submit their own topics.
-    """
-    result = await db.execute(
-        select(Topic)
-        .options(selectinload(Topic.creator))
-        .where(Topic.topic_id == topic_id)
-    )
-    topic = result.scalar_one_or_none()
-    
-    if not topic:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Topic not found"
-        )
-    
-    # Check ownership
-    if topic.creator_id != current_user.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only submit your own topics"
-        )
-    
-    # Check current status
-    if topic.status != "draft":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Only draft topics can be submitted. Current status: {topic.status}"
-        )
-    
-    # Update status
-    topic.status = "pending"
-    await db.commit()
-    await db.refresh(topic)
-    
-    return TopicResponse(
-        topic_id=topic.topic_id,
-        title=topic.title,
-        description=topic.description,
-        objectives=topic.objectives,
-        tech_stack=topic.tech_stack,
-        creator_id=topic.creator_id,
-        dept_id=topic.dept_id,
-        status=topic.status,
-        created_at=topic.created_at,
-        creator_name=topic.creator.full_name if topic.creator else None,
-    )
-
-
-@router.post("/{topic_id}/approve", response_model=TopicResponse)
+@router.patch("/{topic_id}/approve")
 async def approve_topic(
     topic_id: int,
-    db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    Approve a topic (pending → approved).
-    Only HEAD_DEPT or ADMIN can approve topics.
+    Approve a topic (HEAD_DEPT or ADMIN only)
     """
-    # Check role
-    user_role = current_user.role.role_name.upper()
-    if user_role not in ("HEAD_DEPT", "ADMIN"):
+    if current_user.role_id not in [1, 3]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Head of Department or Admin can approve topics"
+            detail="Only admins or heads of department can approve topics"
         )
     
-    result = await db.execute(
-        select(Topic)
-        .options(selectinload(Topic.creator))
-        .where(Topic.topic_id == topic_id)
-    )
-    topic = result.scalar_one_or_none()
+    dao = TopicDAO(db)
+    query = select(Topic).where(Topic.topic_id == topic_id)
+    result = await db.execute(query)
+    topic = result.scalar()
     
     if not topic:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Topic not found"
-        )
-    
-    # Check current status
-    if topic.status != "pending":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Only pending topics can be approved. Current status: {topic.status}"
-        )
-    
-    # Update status
-    topic.status = "approved"
-    await db.commit()
-    await db.refresh(topic)
-    
-    return TopicResponse(
-        topic_id=topic.topic_id,
-        title=topic.title,
-        description=topic.description,
-        objectives=topic.objectives,
-        tech_stack=topic.tech_stack,
-        creator_id=topic.creator_id,
-        dept_id=topic.dept_id,
-        status=topic.status,
-        created_at=topic.created_at,
-        creator_name=topic.creator.full_name if topic.creator else None,
-    )
+        raise HTTPException(status_code=404, detail="Topic not found")
 
+    updated_topic = await dao.update_topic_status(topic, "APPROVED", current_user.user_id)
+    
+    return {
+        "topic_id": updated_topic.topic_id,
+        "status": updated_topic.status,
+        "approved_by": current_user.full_name,
+        "approved_at": updated_topic.approved_at
+    }
 
-@router.post("/{topic_id}/reject", response_model=TopicResponse)
+@router.patch("/{topic_id}/reject")
 async def reject_topic(
     topic_id: int,
-    db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    Reject a topic (pending → rejected).
-    Only HEAD_DEPT or ADMIN can reject topics.
+    Reject a topic (HEAD_DEPT or ADMIN only)
     """
-    # Check role
-    user_role = current_user.role.role_name.upper()
-    if user_role not in ("HEAD_DEPT", "ADMIN"):
+    if current_user.role_id not in [1, 3]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Head of Department or Admin can reject topics"
+            detail="Only admins or heads of department can reject topics"
         )
     
-    result = await db.execute(
-        select(Topic)
-        .options(selectinload(Topic.creator))
-        .where(Topic.topic_id == topic_id)
-    )
-    topic = result.scalar_one_or_none()
+    dao = TopicDAO(db)
+    query = select(Topic).where(Topic.topic_id == topic_id)
+    result = await db.execute(query)
+    topic = result.scalar()
+    
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+
+    updated_topic = await dao.update_topic_status(topic, "REJECTED", current_user.user_id)
+    
+    return {
+        "topic_id": updated_topic.topic_id,
+        "status": updated_topic.status,
+        "rejected_by": current_user.full_name,
+        "rejected_at": updated_topic.approved_at
+    }
+
+# ============================================================================
+# EVALUATION ENDPOINTS
+# ============================================================================
+
+@router.post("/{topic_id}/evaluate", response_model=EvaluationResponse)
+async def create_evaluation(
+    topic_id: int,
+    eval_data: EvaluationCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Create evaluation for a team on a topic (Lecturer only)
+    """
+    if current_user.role_id != 4:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only lecturers can create evaluations"
+        )
+    
+    topic_query = select(Topic).where(Topic.topic_id == topic_id)
+    topic_result = await db.execute(topic_query)
+    topic = topic_result.scalar()
     
     if not topic:
         raise HTTPException(
@@ -444,27 +231,26 @@ async def reject_topic(
             detail="Topic not found"
         )
     
-    # Check current status
-    if topic.status != "pending":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Only pending topics can be rejected. Current status: {topic.status}"
-        )
-    
-    # Update status
-    topic.status = "rejected"
-    await db.commit()
-    await db.refresh(topic)
-    
-    return TopicResponse(
-        topic_id=topic.topic_id,
-        title=topic.title,
-        description=topic.description,
-        objectives=topic.objectives,
-        tech_stack=topic.tech_stack,
-        creator_id=topic.creator_id,
-        dept_id=topic.dept_id,
-        status=topic.status,
-        created_at=topic.created_at,
-        creator_name=topic.creator.full_name if topic.creator else None,
+    evaluation = Evaluation(
+        team_id=eval_data.team_id,
+        topic_id=topic_id,
+        evaluator_id=current_user.user_id,
+        score=eval_data.score,
+        feedback=eval_data.feedback,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
+    
+    db.add(evaluation)
+    await db.commit()
+    await db.refresh(evaluation)
+    
+    return {
+        "evaluation_id": evaluation.evaluation_id,
+        "team_id": evaluation.team_id,
+        "topic_id": evaluation.topic_id,
+        "score": evaluation.score,
+        "feedback": evaluation.feedback,
+        "evaluator": current_user.full_name,
+        "created_at": evaluation.created_at
+    }
