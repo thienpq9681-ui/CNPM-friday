@@ -15,6 +15,69 @@ AI & Real-time: Google Gemini API, Socket.IO.
 📂 Cấu trúc dự án (Project Structure)
 Chúng ta sử dụng kiến trúc Service-Layered đơn giản hóa (Pragmatic Architecture).
 
+    plaint text 
+    CNPM-FRIDAY/
+    ├── docker-compose.yml       # File chạy toàn bộ hệ thống (DB, Backend, Frontend)
+    ├── .github/                 # Chứa tài liệu hướng dẫn cho AI (Copilot)
+    ├── backend/                 # Source code Backend (FastAPI)
+    │   ├── requirements.txt     # Các thư viện Python cần thiết
+    │   └── app/
+    │       ├── main.py          # Điểm khởi chạy App & cấu hình CORS
+    │       ├── api/
+    │       │   ├── deps.py      # Dependency Injection (Lấy User hiện tại, DB Session)
+    │       │   └── v1/          # Các API Endpoints
+    │       │       ├── auth.py      # Login/Register
+    │       │       ├── users.py     # Quản lý Profile
+    │       │       └── projects.py  # Quản lý Đề tài
+    │       ├── core/            # Cấu hình hệ thống (Config, Security, JWT)
+    │       ├── db/              # Kết nối Database (Session, Async Engine)
+    │       ├── models/          # SQLAlchemy Models (Định nghĩa bảng DB) -> Code vào đây
+    │       ├── schemas/         # Pydantic Models (Validate dữ liệu đầu vào/ra) -> Code vào đây
+    │       └── services/        # Logic nghiệp vụ phức tạp (AI, Chat...)
+    └── frontend/                # Source code Frontend (React)
+        ├── src/
+        │   ├── services/        # Gọi API Backend (Axios)
+        │   ├── pages/           # Giao diện các trang
+        │   └── components/      # Các thành phần UI tái sử dụng
+
+
+
+
+
+
+    Plaint text
+    CLUSTER 1: System Identity & Access
+    ├── Role (ADMIN, LECTURER, STUDENT)
+    ├── User
+    ├── Department
+    └── AuditLog
+    CLUSTER 2: Academic Management
+    ├── Semester
+    ├── Subject
+    ├── Syllabus
+    ├── AcademicClass
+    └── ClassEnrollment
+    CLUSTER 3: Project & Team
+    ├── Topic (Đề tài)
+    ├── Project
+    ├── Team
+    └── TeamMember
+    CLUSTER 4: Agile & Collaboration
+    ├── Sprint
+    ├── Task
+    ├── Meeting
+    ├── Channel
+    └── Message
+    CLUSTER 5: Milestones & Submissions
+    ├── Milestone
+    ├── Checkpoint
+    └── Submission
+    CLUSTER 6: Evaluation & Resources
+    ├── EvaluationCriterion
+    ├── Evaluation
+    ├── PeerReview
+    └── Resource
+
 🚀 Hướng dẫn Cài đặt & Chạy (Quick Start)
 Yêu cầu: Máy tính đã cài đặt Docker Desktop.
 
@@ -103,6 +166,7 @@ docker-compose up --build
 Kiểm tra xem Backend đã chạy chưa (vào link Swagger xem được không).
 
 Kiểm tra file backend/app/core/config.py xem đã thêm http://localhost:3000 vào BACKEND_CORS_ORIGINS chưa.
+
 
 # các bugs
 nhiều project bị lặp lại là do dùng để test chức năng cuộn của bảng project, chưa có dữ liệu thực tế.
