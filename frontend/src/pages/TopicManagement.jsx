@@ -19,7 +19,7 @@ import {
 import dayjs from 'dayjs';
 import { useAuth, resolveRoleName } from '../components/AuthContext';
 import { lecturerTopicsService } from '../services/lecturerTopicsService';
-import './DashboardPage.css';
+import './StudentDashboard.css';
 import './TopicManagement.css';
 
 const { Title, Text } = Typography;
