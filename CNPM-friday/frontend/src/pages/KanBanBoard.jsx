@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Card, Col, Row, Select, Modal, Form, Input, message, Tag } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+<<<<<<< HEAD:frontend/src/pages/KanBanBoard.jsx
+import { taskService } from '../services/api';
+=======
 import { tasksService } from '../services/tasksService';
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/KanBanBoard.jsx
 import MainLayout from '../components/MainLayout';
 
 const { Title } = Typography;
@@ -22,8 +26,19 @@ const KanBanBoard = () => {
 
     const fetchSprints = async () => {
         try {
+<<<<<<< HEAD:frontend/src/pages/KanBanBoard.jsx
+            // Assuming there's an endpoint to get all sprints, otherwise we might need to adjust
+            // The user request mentioned POST /api/v1/tasks/sprints and GET /api/v1/tasks/sprints/{sprint_id}
+            // but not "Get All Sprints". I'll assume we can get them or there's a default.
+            // For now, I'll simulate or try to fetch tasks directly if no sprints.
+            // Or maybe GET /api/v1/tasks returns all tasks?
+            // Let's assume we can fetch tasks without sprint first, or sprints are needed.
+            // I'll try to fetch tasks globally if no sprint API for "list".
+            const res = await taskService.getAllTasks();
+=======
             // Fetch all tasks for now, unless we have listSprints
             const res = await tasksService.getAllTasks();
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/KanBanBoard.jsx
             const allTasks = res.data || [];
             setTasks(allTasks);
 
@@ -37,7 +52,11 @@ const KanBanBoard = () => {
     const fetchSprintTasks = async (sprintId) => {
         setLoading(true);
         try {
+<<<<<<< HEAD:frontend/src/pages/KanBanBoard.jsx
+            const res = await taskService.getSprintTasks(sprintId);
+=======
             const res = await tasksService.getSprintTasks(sprintId);
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/KanBanBoard.jsx
             setTasks(res.data || []);
         } catch (error) {
             console.error("Failed to fetch sprint tasks", error);
@@ -63,7 +82,11 @@ const KanBanBoard = () => {
 
     const handleCreateTask = async (values) => {
         try {
+<<<<<<< HEAD:frontend/src/pages/KanBanBoard.jsx
+            await taskService.createTask({ ...values, sprint_id: currentSprintId });
+=======
             await tasksService.createTask({ ...values, sprint_id: currentSprintId });
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/KanBanBoard.jsx
             message.success('Task created');
             setIsTaskModalOpen(false);
             taskForm.resetFields();
@@ -76,7 +99,11 @@ const KanBanBoard = () => {
 
     const handleCreateSprint = async (values) => {
         try {
+<<<<<<< HEAD:frontend/src/pages/KanBanBoard.jsx
+            const res = await taskService.createSprint(values);
+=======
             const res = await tasksService.createSprint(values);
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/KanBanBoard.jsx
             message.success('Sprint created');
             setIsSprintModalOpen(false);
             sprintForm.resetFields();
@@ -90,7 +117,11 @@ const KanBanBoard = () => {
 
     const handleStatusChange = async (taskId, newStatus) => {
         try {
+<<<<<<< HEAD:frontend/src/pages/KanBanBoard.jsx
+            await taskService.changeStatus(taskId, newStatus);
+=======
             await tasksService.changeStatus(taskId, newStatus);
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/KanBanBoard.jsx
             message.success("Status updated");
             // Optimistic update
             setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
@@ -104,7 +135,11 @@ const KanBanBoard = () => {
     return (
         <MainLayout>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+<<<<<<< HEAD:frontend/src/pages/KanBanBoard.jsx
+                <Title level={2}>Kanban Board</Title>
+=======
                 <Title level={2} style={{ margin: '0 0 8px 0', fontWeight: 'normal' }}>Kanban Board Detail</Title>
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/KanBanBoard.jsx
                 <div style={{ display: 'flex', gap: 10 }}>
                     <Button onClick={() => setIsSprintModalOpen(true)}>New Sprint</Button>
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsTaskModalOpen(true)}>

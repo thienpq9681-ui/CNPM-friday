@@ -1,7 +1,10 @@
 /**
  * Mentoring Service - Phase 4
+<<<<<<< HEAD:frontend/src/services/mentoringService.js
+=======
  * Copy file này vào: frontend/src/services/mentoringService.js
  * 
+>>>>>>> upstream/main:CNPM-friday/frontend/src/services/mentoringService.js
  * Quản lý các API calls cho AI Mentoring
  */
 
@@ -56,7 +59,10 @@ export const deleteMentoringLog = async (logId) => {
   await api.delete(`/mentoring/${logId}`);
 };
 
+<<<<<<< HEAD:frontend/src/services/mentoringService.js
+=======
 
+>>>>>>> upstream/main:CNPM-friday/frontend/src/services/mentoringService.js
 // ============ AI SUGGESTIONS ============
 
 /**
@@ -69,7 +75,10 @@ export const generateAISuggestions = async (logId, requestData) => {
   return response.data;
 };
 
+<<<<<<< HEAD:frontend/src/services/mentoringService.js
+=======
 
+>>>>>>> upstream/main:CNPM-friday/frontend/src/services/mentoringService.js
 export default {
   createMentoringLog,
   getTeamMentoringLogs,

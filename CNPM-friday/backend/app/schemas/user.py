@@ -78,6 +78,15 @@ class UserResponse(UserBase):
     user_id: UUID
     role_id: int
     avatar_url: Optional[str] = None
+    dept_id: Optional[int] = None
 
     class Config:
         from_attributes = True  # Để đọc được dữ liệu từ SQLAlchemy model
+
+
+class UserDeptUpdate(BaseModel):
+    dept_id: int
+
+
+class UserRoleUpdate(BaseModel):
+    role_id: int

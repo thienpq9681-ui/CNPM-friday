@@ -12,7 +12,7 @@ Description:
 """
 
 from fastapi import APIRouter, HTTPException, Depends, status
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
@@ -180,9 +180,10 @@ async def get_teams(
     teams_response = []
     for t in teams:
         # Count members
-        member_query = select(TeamMember).where(TeamMember.team_id == t.team_id)
-        member_result = await db.execute(member_query)
-        members = member_result.scalars().all()
+        member_count_result = await db.execute(
+            select(func.count()).where(TeamMember.team_id == t.team_id)
+        )
+        member_count = member_count_result.scalar() or 0
         
         # Get creator name
         creator_query = select(User).where(User.user_id == t.created_by)
@@ -194,7 +195,7 @@ async def get_teams(
             "name": t.name,
             "project_id": t.project_id,
             "description": t.description,
-            "member_count": len(members),
+            "member_count": member_count,
             "is_finalized": t.is_finalized,
             "created_by": creator.full_name if creator else "Unknown",
             "created_at": t.created_at

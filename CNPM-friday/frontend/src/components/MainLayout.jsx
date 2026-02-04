@@ -4,8 +4,13 @@ import { Layout, Typography, Button, Avatar, Space, Badge, Input, message, Divid
 import {
     SettingOutlined, BellOutlined, SearchOutlined,
     DashboardOutlined, TeamOutlined, DesktopOutlined, TableOutlined,
+<<<<<<< HEAD:frontend/src/components/MainLayout.jsx
+    FileTextOutlined, VideoCameraOutlined, SendOutlined, FormOutlined, MessageOutlined,
+    LogoutOutlined, LeftOutlined, RightOutlined, BulbOutlined
+=======
     FileTextOutlined, VideoCameraOutlined, SendOutlined, FormOutlined,
     LogoutOutlined, LeftOutlined, RightOutlined
+>>>>>>> upstream/main:CNPM-friday/frontend/src/components/MainLayout.jsx
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useAuth, resolveRoleName } from './AuthContext';
@@ -156,12 +161,30 @@ const MainLayout = ({ children }) => {
                                 <div style={navButtonStyles('workspace', '/workspace')} onClick={() => message.info('Coming soon')} onMouseEnter={() => setHoveredNav('workspace')} onMouseLeave={() => setHoveredNav(null)}>
                                     <DesktopOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>Real-time Workspace</span>}
                                 </div>
+<<<<<<< HEAD:frontend/src/components/MainLayout.jsx
+                                <div style={navButtonStyles('chat', '/team-chat')} onClick={() => navigate('/team-chat')} onMouseEnter={() => setHoveredNav('chat')} onMouseLeave={() => setHoveredNav(null)}>
+                                    <MessageOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>Team Chat</span>}
+                                </div>
+                                <div style={navButtonStyles('mentoring', '/mentoring')} onClick={() => navigate('/mentoring')} onMouseEnter={() => setHoveredNav('mentoring')} onMouseLeave={() => setHoveredNav(null)}>
+                                    <BulbOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>AI Mentoring</span>}
+                                </div>
+=======
+>>>>>>> upstream/main:CNPM-friday/frontend/src/components/MainLayout.jsx
                                 <div style={navButtonStyles('kanban', '/kanban')} onClick={() => navigate('/kanban')} onMouseEnter={() => setHoveredNav('kanban')} onMouseLeave={() => setHoveredNav(null)}>
                                     <TableOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>Kanban Board Detail</span>}
                                 </div>
                                 <div style={navButtonStyles('whiteboard', '/whiteboard')} onClick={() => message.info('Coming soon')} onMouseEnter={() => setHoveredNav('whiteboard')} onMouseLeave={() => setHoveredNav(null)}>
                                     <FormOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>Whiteboard Canvas</span>}
                                 </div>
+<<<<<<< HEAD:frontend/src/components/MainLayout.jsx
+                                <div style={navButtonStyles('video', '/video')} onClick={() => message.info('Coming soon')} onMouseEnter={() => setHoveredNav('video')} onMouseLeave={() => setHoveredNav(null)}>
+                                    <VideoCameraOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>Video Meeting Room</span>}
+                                </div>
+                                <div style={navButtonStyles('submission', '/submission')} onClick={() => message.info('Coming soon')} onMouseEnter={() => setHoveredNav('submission')} onMouseLeave={() => setHoveredNav(null)}>
+                                    <SendOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>Submission Portal</span>}
+                                </div>
+                                <div style={navButtonStyles('peer', '/peer')} onClick={() => navigate('/peer')} onMouseEnter={() => setHoveredNav('peer')} onMouseLeave={() => setHoveredNav(null)}>
+=======
                                 <div style={navButtonStyles('video', '/video')} onClick={() => navigate('/video')} onMouseEnter={() => setHoveredNav('video')} onMouseLeave={() => setHoveredNav(null)}>
                                     <VideoCameraOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>Video Meeting Room</span>}
                                 </div>
@@ -169,6 +192,7 @@ const MainLayout = ({ children }) => {
                                     <SendOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>Submission Portal</span>}
                                 </div>
                                 <div style={navButtonStyles('peer', '/peer-review')} onClick={() => navigate('/peer-review')} onMouseEnter={() => setHoveredNav('peer')} onMouseLeave={() => setHoveredNav(null)}>
+>>>>>>> upstream/main:CNPM-friday/frontend/src/components/MainLayout.jsx
                                     <FileTextOutlined /> {!collapsed && <span style={{ marginLeft: 10 }}>Peer Review Form</span>}
                                 </div>
                             </Space>

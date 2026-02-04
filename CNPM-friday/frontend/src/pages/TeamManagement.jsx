@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Table, Modal, Form, Input, message, Row, Col, Card } from 'antd';
 import { PlusOutlined, TeamOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+<<<<<<< HEAD:frontend/src/pages/TeamManagement.jsx
+import { teamService } from '../services/api';
+=======
 import { studentTeamsService } from '../services/studentTeamsService';
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/TeamManagement.jsx
 import MainLayout from '../components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -20,8 +24,17 @@ const TeamManagement = () => {
     const fetchTeams = async () => {
         setLoading(true);
         try {
+<<<<<<< HEAD:frontend/src/pages/TeamManagement.jsx
+            const res = await teamService.getAll();
+            const rawTeams = res?.data;
+            const teamList = Array.isArray(rawTeams)
+                ? rawTeams
+                : (rawTeams?.teams || []);
+            setTeams(teamList);
+=======
             const res = await studentTeamsService.listTeams();
             setTeams(res.data || []);
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/TeamManagement.jsx
         } catch (error) {
             console.error("Failed to fetch teams", error);
             message.error("Failed to load teams");
@@ -36,7 +49,11 @@ const TeamManagement = () => {
 
     const handleCreateTeam = async (values) => {
         try {
+<<<<<<< HEAD:frontend/src/pages/TeamManagement.jsx
+            await teamService.create(values);
+=======
             await studentTeamsService.createTeam(values);
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/TeamManagement.jsx
             message.success('Team created successfully');
             setIsModalOpen(false);
             form.resetFields();
@@ -92,8 +109,12 @@ const TeamManagement = () => {
     ];
     const handleJoinTeam = async (values) => {
         try {
+<<<<<<< HEAD:frontend/src/pages/TeamManagement.jsx
+            await teamService.joinByCode(values.join_code);
+=======
             // Using joinTeamByCode which assumes a global join endpoint exists
             await studentTeamsService.joinTeamByCode(values.join_code);
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/TeamManagement.jsx
             message.success('Joined team successfully');
             setIsJoinModalOpen(false);
             joinForm.resetFields();
@@ -107,7 +128,11 @@ const TeamManagement = () => {
     return (
         <MainLayout>
             <div style={{ marginBottom: 30 }}>
+<<<<<<< HEAD:frontend/src/pages/TeamManagement.jsx
+                <Title level={2} style={{ margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: 0.5 }}>Team Management</Title>
+=======
                 <Title level={2} style={{ margin: '0 0 8px 0', fontWeight: 'normal' }}>Team Management</Title>
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/TeamManagement.jsx
                 <Text style={{ fontSize: 16, color: '#595959' }}>See your team and manage your team member and roles</Text>
             </div>
 

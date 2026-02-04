@@ -7,7 +7,7 @@ import {
   DashboardOutlined, TeamOutlined, DesktopOutlined, TableOutlined,
   FileTextOutlined, VideoCameraOutlined, SendOutlined, FormOutlined,
   LogoutOutlined, UserOutlined, AppstoreOutlined, ProjectOutlined,
-  MenuOutlined, DownOutlined,
+  MenuOutlined, DownOutlined, MessageOutlined,
   LeftOutlined, RightOutlined
 } from '@ant-design/icons';
 import { Dropdown, Menu } from 'antd';
@@ -168,12 +168,30 @@ const ProjectListView = () => {
         const res = await projectService.getAll();
         const rawData = res.data || [];
         // Map data to have 'key' for Antd Table
+<<<<<<< HEAD:frontend/src/pages/ProjectListView.jsx
+        const mappedData = rawData.map(item => {
+          const topicTitle = item?.topic?.title || item.topic_title || item.project_name || item.topic || 'Untitled Project';
+          const proposerName = item?.topic?.creator_id || item.proposer || '-';
+          const startedAt = item?.topic?.created_at || item.created_at || item.date || 'N/A';
+
+          return {
+            ...item,
+            topic: topicTitle,
+            proposer: proposerName,
+            date: startedAt,
+            key: item.id || item.project_id || item.key || Math.random().toString(),
+            // Ensure id is present for claim
+            id: item.id || item.project_id
+          };
+        });
+=======
         const mappedData = rawData.map(item => ({
           ...item,
           key: item.id || item.project_id || item.key || Math.random().toString(),
           // Ensure id is present for claim
           id: item.id || item.project_id
         }));
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/ProjectListView.jsx
         setAllData(mappedData);
       } catch (error) {
         console.error("Failed to fetch projects", error);
@@ -187,11 +205,23 @@ const ProjectListView = () => {
 
   const handleChooseProject = async (record) => {
     try {
-      if (record.status === 'Claimed') {
+      const normalizedStatus = String(record.status || '').toUpperCase();
+      const isClaimed = normalizedStatus === 'CLAIMED';
+      const isApproved = normalizedStatus === 'APPROVED' || normalizedStatus === 'ACTIVE';
+
+      if (isClaimed) {
         message.warning('This project is already claimed!');
         return;
       }
 
+<<<<<<< HEAD:frontend/src/pages/ProjectListView.jsx
+      if (!isApproved) {
+        message.warning('This project is not approved yet.');
+        return;
+      }
+
+=======
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/ProjectListView.jsx
       await projectService.claim(record.id);
       message.success('Project claimed successfully!');
 
@@ -215,7 +245,7 @@ const ProjectListView = () => {
 
     } catch (error) {
       console.error(error);
-      message.error('Failed to claim project');
+      message.error('Failed to join project');
     }
   };
   const handleLogout = () => {
@@ -367,14 +397,24 @@ const ProjectListView = () => {
     .filter(item => {
       const searchKey = searchText.trim().toLowerCase();
       // Sử dụng trạng thái selectedCategory để lưu Topic đã chọn
+<<<<<<< HEAD:frontend/src/pages/ProjectListView.jsx
+      const topicValue = String(item.topic || '');
+      const matchesTopic = selectedCategory ? topicValue === selectedCategory : true;
+      const matchesSearch = topicValue.toLowerCase().includes(searchKey);
+=======
       const matchesTopic = selectedCategory ? item.topic === selectedCategory : true;
       const matchesSearch = item.topic.toLowerCase().includes(searchKey);
+>>>>>>> upstream/main:CNPM-friday/frontend/src/pages/ProjectListView.jsx
       return matchesTopic && matchesSearch;
     })
     .sort((a, b) => {
+      const statusA = String(a.status || '').toUpperCase();
+      const statusB = String(b.status || '').toUpperCase();
+      const isClaimedA = statusA === 'CLAIMED';
+      const isClaimedB = statusB === 'CLAIMED';
       // Ưu tiên "Claimed" status
-      if (a.status === 'Claimed' && b.status !== 'Claimed') return 1;
-      if (a.status !== 'Claimed' && b.status === 'Claimed') return -1;
+      if (isClaimedA && !isClaimedB) return 1;
+      if (!isClaimedA && isClaimedB) return -1;
       // Sort bằng topic
       return a.topic.localeCompare(b.topic);
     });
@@ -408,22 +448,30 @@ const ProjectListView = () => {
       title: 'Activity',
       key: 'activity',
       width: 100,
-      render: (_, record) => (
-        <Button
-          size="small"
-          type="default"
-          style={{
-            background: record.status === 'Claimed' ? '#d9d9d9' : '#1890ff',
-            color: record.status === 'Claimed' ? '#00000040' : '#fff',
-            border: 'none',
-            cursor: record.status === 'Claimed' ? 'not-allowed' : 'pointer'
-          }}
-          onClick={() => handleChooseProject(record)}
-          disabled={record.status === 'Claimed'}
-        >
-          {record.status === 'Claimed' ? 'Claimed' : 'Choose'}
-        </Button>
-      )
+      render: (_, record) => {
+        const normalizedStatus = String(record.status || '').toUpperCase();
+        const isClaimed = normalizedStatus === 'CLAIMED';
+        const isApproved = normalizedStatus === 'APPROVED' || normalizedStatus === 'ACTIVE';
+        const isDisabled = isClaimed || !isApproved;
+        const label = isClaimed ? 'Claimed' : (isApproved ? 'Join' : 'Pending');
+
+        return (
+          <Button
+            size="small"
+            type="default"
+            style={{
+              background: isDisabled ? '#d9d9d9' : '#1890ff',
+              color: isDisabled ? '#00000040' : '#fff',
+              border: 'none',
+              cursor: isDisabled ? 'not-allowed' : 'pointer'
+            }}
+            onClick={() => handleChooseProject(record)}
+            disabled={isDisabled}
+          >
+            {label}
+          </Button>
+        );
+      }
     },
   ];
 
@@ -567,6 +615,15 @@ const ProjectListView = () => {
                   {...navButtonInteractions('team')}
                 >
                   {!collapsed && "Team Management"}
+                </Button>
+                <Button
+                  type="text"
+                  block
+                  icon={<MessageOutlined />}
+                  onClick={() => navigate('/team-chat')}
+                  {...navButtonInteractions('team-chat')}
+                >
+                  {!collapsed && "Team Chat"}
                 </Button>
                 <Button
                   type="text"

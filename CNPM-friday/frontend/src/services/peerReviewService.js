@@ -1,7 +1,10 @@
 /**
  * Peer Reviews Service - Phase 4
+<<<<<<< HEAD:frontend/src/services/peerReviewService.js
+=======
  * Copy file này vào: frontend/src/services/peerReviewService.js
  * 
+>>>>>>> upstream/main:CNPM-friday/frontend/src/services/peerReviewService.js
  * Quản lý các API calls cho Peer Reviews
  */
 
@@ -43,6 +46,8 @@ export const getMyReviews = async (teamId) => {
 };
 
 /**
+<<<<<<< HEAD:frontend/src/services/peerReviewService.js
+=======
  * Lấy reviews mà mình đã được người khác review (About Me)
  * @param {number} teamId - ID của team
  */
@@ -63,6 +68,7 @@ export const getReviewDetail = async (reviewId) => {
 };
 
 /**
+>>>>>>> upstream/main:CNPM-friday/frontend/src/services/peerReviewService.js
  * Lấy summary peer reviews của cả team (chỉ Lecturer)
  * @param {number} teamId - ID của team
  */
@@ -89,7 +95,10 @@ export const deletePeerReview = async (reviewId) => {
   await api.delete(`/peer-reviews/${reviewId}`);
 };
 
+<<<<<<< HEAD:frontend/src/services/peerReviewService.js
+=======
 
+>>>>>>> upstream/main:CNPM-friday/frontend/src/services/peerReviewService.js
 // ============ UTILITY FUNCTIONS ============
 
 /**
@@ -117,18 +126,28 @@ export const checkReviewProgress = (myReviews, teamMembers, myUserId) => {
   return {
     reviewed: myReviews.length,
     remaining: toReview.length,
+<<<<<<< HEAD:frontend/src/services/peerReviewService.js
+    total: Math.max(teamMembers.length - 1, 0),
+=======
     total: teamMembers.length - 1, // Trừ bản thân
+>>>>>>> upstream/main:CNPM-friday/frontend/src/services/peerReviewService.js
     completed: toReview.length === 0
   };
 };
 
+<<<<<<< HEAD:frontend/src/services/peerReviewService.js
+=======
 
+>>>>>>> upstream/main:CNPM-friday/frontend/src/services/peerReviewService.js
 export default {
   createPeerReview,
   getTeamPeerReviews,
   getMyReviews,
+<<<<<<< HEAD:frontend/src/services/peerReviewService.js
+=======
   getReviewsAboutMe,
   getReviewDetail,
+>>>>>>> upstream/main:CNPM-friday/frontend/src/services/peerReviewService.js
   getTeamReviewSummary,
   updatePeerReview,
   deletePeerReview,

@@ -15,10 +15,11 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    literal,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym, column_property
 
 from app.db.base import Base
 
@@ -228,7 +229,7 @@ class Topic(Base):
     requirements: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Added
     creator_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id")) # This maps to created_by in API logic if we adjust API or here
     created_by: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added for compatibility
-    dept_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("departments.dept_id"), nullable=True) # Made nullable
+    dept_id: Mapped[int] = mapped_column(Integer, ForeignKey("departments.dept_id"))
     status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     approved_by: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added
@@ -263,11 +264,11 @@ class Team(Base):
     leader_id: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Made nullable
     created_by: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added
     class_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("academic_classes.class_id"), nullable=True) # Made nullable
-    name: Mapped[Optional[str]] = mapped_column(String, nullable=True) # Added alias for ease, or we use team_name
     team_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # Added
+    name: Mapped[Optional[str]] = synonym("team_name")
+    description: Mapped[Optional[str]] = column_property(literal(None))
     join_code: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    is_finalized: Mapped[bool] = mapped_column(Boolean, default=False) # Added
+    is_finalized: Mapped[bool] = column_property(join_code.is_(None))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     project: Mapped[Optional["Project"]] = relationship("Project", back_populates="teams")
@@ -289,14 +290,14 @@ class TeamMember(Base):
     __tablename__ = "team_members"
     # FIX: Added ondelete=CASCADE
     team_id: Mapped[int] = mapped_column(Integer, ForeignKey("teams.team_id", ondelete="CASCADE"), primary_key=True)
-    user_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True) # Changed from student_id to user_id to match API
-    # Removed student_id
+    student_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[UUID] = synonym("student_id")
     role: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     team: Mapped["Team"] = relationship("Team", back_populates="members")
-    student: Mapped["User"] = relationship("User", back_populates="team_memberships", foreign_keys=[user_id])
+    student: Mapped["User"] = relationship("User", back_populates="team_memberships", foreign_keys=[student_id])
 
 
 # ==========================================

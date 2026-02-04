@@ -118,13 +118,306 @@
         ]
       }
     },
+    "/api/v1/profile/me": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Get current user profile",
+        "description": "Get the profile of the currently authenticated user.\n\nReturns:\n    UserProfileResponse: Complete user profile with role and department info",
+        "operationId": "get_current_user_profile_api_v1_profile_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Update current user profile",
+        "description": "Update the profile of the currently authenticated user.\n\nAllowed updates:\n- full_name\n- avatar_url (must be valid image URL)\n- phone (must be valid Vietnamese phone number)\n- bio (max 1000 characters)\n\nArgs:\n    profile_update: Profile data to update\n\nReturns:\n    UserProfileResponse: Updated user profile\n    \nRaises:\n    HTTPException 404: User not found\n    HTTPException 422: Validation error (invalid phone/avatar URL)",
+        "operationId": "update_current_user_profile_api_v1_profile_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/academic-classes/": {
+      "post": {
+        "tags": [
+          "academic-classes"
+        ],
+        "summary": "Create Academic Class",
+        "operationId": "create_academic_class_api_v1_academic_classes__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademicClassCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicClassResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "academic-classes"
+        ],
+        "summary": "Get Academic Classes",
+        "operationId": "get_academic_classes_api_v1_academic_classes__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AcademicClassResponse"
+                  },
+                  "title": "Response Get Academic Classes Api V1 Academic Classes  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academic-classes/{class_id}": {
+      "get": {
+        "tags": [
+          "academic-classes"
+        ],
+        "summary": "Get Academic Class",
+        "operationId": "get_academic_class_api_v1_academic_classes__class_id__get",
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Class Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicClassResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "academic-classes"
+        ],
+        "summary": "Update Academic Class",
+        "operationId": "update_academic_class_api_v1_academic_classes__class_id__put",
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Class Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademicClassUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicClassResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "academic-classes"
+        ],
+        "summary": "Delete Academic Class",
+        "operationId": "delete_academic_class_api_v1_academic_classes__class_id__delete",
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Class Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/topics": {
       "post": {
         "tags": [
           "topics"
         ],
         "summary": "Create Topic",
-        "description": "Create a new topic (Lecturer only)\n- Status: DRAFT by default\n- Only role_id 4 (Lecturer) can create\n\nRequest:\n    {\n        \"title\": \"AI Chatbot Project\",\n        \"description\": \"Build an AI-powered chatbot\",\n        \"requirements\": \"Python, NLP knowledge\"\n    }\n\nResponse:\n    {\n        \"topic_id\": 1,\n        \"title\": \"AI Chatbot Project\",\n        \"status\": \"DRAFT\",\n        \"created_by\": \"lecturer@example.com\",\n        \"created_at\": \"2026-01-28T10:00:00\"\n    }",
+        "description": "Create a new topic (Lecturer only)",
         "operationId": "create_topic_api_v1_topics_post",
         "security": [
           {
@@ -169,7 +462,7 @@
           "topics"
         ],
         "summary": "Get Topics",
-        "description": "Get topics list\n- Lecturers see all topics\n- Students see only APPROVED topics\n\nQuery params:\n    ?status=DRAFT  (filters by status)\n\nResponse:\n    {\n        \"topics\": [\n            {\n                \"topic_id\": 1,\n                \"title\": \"AI Project\",\n                \"status\": \"APPROVED\",\n                \"created_by\": \"lecturer@example.com\"\n            },\n            ...\n        ],\n        \"total\": 5\n    }",
+        "description": "Get topics list with caching and relationships optimized via DAO",
         "operationId": "get_topics_api_v1_topics_get",
         "security": [
           {
@@ -224,7 +517,7 @@
           "topics"
         ],
         "summary": "Get Topic Detail",
-        "description": "Get topic details by ID\n\nResponse:\n    {\n        \"topic_id\": 1,\n        \"title\": \"AI Project\",\n        \"description\": \"...\",\n        \"status\": \"APPROVED\",\n        \"created_by\": \"lecturer@example.com\",\n        \"created_at\": \"2026-01-28T10:00:00\",\n        \"approved_by\": \"admin@example.com\",\n        \"approved_at\": \"2026-01-28T11:00:00\"\n    }",
+        "description": "Get topic details by ID",
         "operationId": "get_topic_detail_api_v1_topics__topic_id__get",
         "security": [
           {
@@ -272,7 +565,7 @@
           "topics"
         ],
         "summary": "Approve Topic",
-        "description": "Approve a topic (HEAD_DEPT or ADMIN only)\n- Changes status from DRAFT to APPROVED\n- Sets approved_by and approved_at\n\nResponse:\n    {\n        \"topic_id\": 1,\n        \"status\": \"APPROVED\",\n        \"approved_by\": \"admin@example.com\",\n        \"approved_at\": \"2026-01-28T11:00:00\"\n    }",
+        "description": "Approve a topic (HEAD_DEPT or ADMIN only)",
         "operationId": "approve_topic_api_v1_topics__topic_id__approve_patch",
         "security": [
           {
@@ -320,7 +613,7 @@
           "topics"
         ],
         "summary": "Reject Topic",
-        "description": "Reject a topic (HEAD_DEPT or ADMIN only)\n- Changes status from DRAFT to REJECTED\n- Sets approved_by and approved_at\n\nResponse:\n    {\n        \"topic_id\": 1,\n        \"status\": \"REJECTED\",\n        \"rejected_by\": \"admin@example.com\",\n        \"rejected_at\": \"2026-01-28T11:00:00\"\n    }",
+        "description": "Reject a topic (HEAD_DEPT or ADMIN only)",
         "operationId": "reject_topic_api_v1_topics__topic_id__reject_patch",
         "security": [
           {
@@ -362,14 +655,14 @@
         }
       }
     },
-    "/api/v1/topics/evaluations/{topic_id}": {
+    "/api/v1/topics/{topic_id}/evaluate": {
       "post": {
         "tags": [
           "topics"
         ],
         "summary": "Create Evaluation",
-        "description": "Create evaluation for a team on a topic (Lecturer only)\n\nRequest:\n    {\n        \"team_id\": 1,\n        \"project_id\": 5,\n        \"score\": 8.5,\n        \"feedback\": \"Great work on the project\"\n    }\n\nResponse:\n    {\n        \"evaluation_id\": 1,\n        \"team_id\": 1,\n        \"topic_id\": 1,\n        \"score\": 8.5,\n        \"feedback\": \"Great work...\",\n        \"evaluator\": \"lecturer@example.com\",\n        \"created_at\": \"2026-01-28T11:00:00\"\n    }",
-        "operationId": "create_evaluation_api_v1_topics_evaluations__topic_id__post",
+        "description": "Create evaluation for a team on a topic (Lecturer only)",
+        "operationId": "create_evaluation_api_v1_topics__topic_id__evaluate_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -402,62 +695,7 @@
             "content": {
               "application/json": {
                 "schema": {
-
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/topics/evaluations": {
-      "get": {
-        "tags": [
-          "topics"
-        ],
-        "summary": "Get Evaluations",
-        "description": "Get evaluations (filter by team_id if provided)\n\nResponse:\n    {\n        \"evaluations\": [\n            {\n                \"evaluation_id\": 1,\n                \"team_id\": 1,\n                \"topic_id\": 1,\n                \"score\": 8.5,\n                \"feedback\": \"...\"\n            },\n            ...\n        ],\n        \"total\": 3\n    }",
-        "operationId": "get_evaluations_api_v1_topics_evaluations_get",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "team_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Team Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
+                  "$ref": "#/components/schemas/EvaluationResponse"
                 }
               }
             }
@@ -759,6 +997,296 @@
               "application/json": {
                 "schema": {
 
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/teams/{team_id}/select-project": {
+      "patch": {
+        "tags": [
+          "teams"
+        ],
+        "summary": "Select Project",
+        "description": "Select a project for the team (Leader only)\n- Validates team exists\n- Validates user is the leader\n- Validates team not finalized\n- Validates project exists and is active\n\nRequest:\n    {\n        \"project_id\": 1\n    }\n\nResponse:\n    {\n        \"team_id\": 1,\n        \"project_id\": 1,\n        \"message\": \"Project selected successfully\"\n    }",
+        "operationId": "select_project_api_v1_teams__team_id__select_project_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamProjectSelect"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Create Project",
+        "description": "Create a new Project linking a Topic to an Academic Class.\nOnly Lecturers can create projects.",
+        "operationId": "create_project_api_v1_projects__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "List Projects",
+        "description": "List all projects.",
+        "operationId": "list_projects_api_v1_projects__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by class",
+              "title": "Class Id"
+            },
+            "description": "Filter by class"
+          },
+          {
+            "name": "topic_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by topic",
+              "title": "Topic Id"
+            },
+            "description": "Filter by topic"
+          },
+          {
+            "name": "claimed_by_me",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Filter projects claimed by current user",
+              "default": false,
+              "title": "Claimed By Me"
+            },
+            "description": "Filter projects claimed by current user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponse"
+                  },
+                  "title": "Response List Projects Api V1 Projects  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/claim": {
+      "patch": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Claim Project",
+        "description": "Claim a project (Student only).",
+        "operationId": "claim_project_api_v1_projects__project_id__claim_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Project",
+        "description": "Get project details.",
+        "operationId": "get_project_api_v1_projects__project_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
                 }
               }
             }
@@ -1179,6 +1707,2458 @@
         }
       }
     },
+    "/api/v1/tasks/sprints/{sprint_id}/tasks": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Get Sprint Tasks",
+        "description": "Get all tasks in a sprint with optional status filter.\n\nQuery params:\n    ?status_filter=DOING\n\nResponse:\n    {\n        \"sprint_id\": 1,\n        \"tasks\": [...],\n        \"total\": 5\n    }",
+        "operationId": "get_sprint_tasks_api_v1_tasks_sprints__sprint_id__tasks_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sprint Id"
+            }
+          },
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}/status": {
+      "patch": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Change Task Status",
+        "description": "Change task status with validation.\n\nValid transitions:\n    TODO → DOING\n    DOING → REVIEW | TODO\n    REVIEW → DONE | DOING\n    DONE → REVIEW\n\nRequest:\n    ?new_status=DOING&blocked_reason=Waiting%20for%20API\n\nResponse:\n    {\n        \"task_id\": 1,\n        \"old_status\": \"TODO\",\n        \"new_status\": \"DOING\",\n        \"updated_at\": \"...\"\n    }",
+        "operationId": "change_task_status_api_v1_tasks__task_id__status_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "new_status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "New Status"
+            }
+          },
+          {
+            "name": "blocked_reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Blocked Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}/assign": {
+      "patch": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Assign Task",
+        "description": "Assign task to a team member.\nValidates that the user is a member of the team that owns the sprint.\n\nRequest:\n    ?user_id=\u003Cuuid\u003E\n\nResponse:\n    {\n        \"task_id\": 1,\n        \"assigned_to\": \"John Doe\",\n        \"updated_at\": \"...\"\n    }",
+        "operationId": "assign_task_api_v1_tasks__task_id__assign_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subjects/": {
+      "post": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Create Subject",
+        "operationId": "create_subject_api_v1_subjects__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubjectCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Get Subjects",
+        "operationId": "get_subjects_api_v1_subjects__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubjectResponse"
+                  },
+                  "title": "Response Get Subjects Api V1 Subjects  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subjects/{subject_id}": {
+      "get": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Get Subject",
+        "operationId": "get_subject_api_v1_subjects__subject_id__get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Subject Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Update Subject",
+        "operationId": "update_subject_api_v1_subjects__subject_id__put",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Subject Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubjectUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Delete Subject",
+        "operationId": "delete_subject_api_v1_subjects__subject_id__delete",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Subject Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/syllabuses/": {
+      "post": {
+        "tags": [
+          "syllabuses"
+        ],
+        "summary": "Create Syllabus",
+        "operationId": "create_syllabus_api_v1_syllabuses__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyllabusCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyllabusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "syllabuses"
+        ],
+        "summary": "Get All Syllabuses",
+        "operationId": "get_all_syllabuses_api_v1_syllabuses__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Active"
+            }
+          },
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SyllabusWithSubject"
+                  },
+                  "title": "Response Get All Syllabuses Api V1 Syllabuses  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/syllabuses/{syllabus_id}": {
+      "get": {
+        "tags": [
+          "syllabuses"
+        ],
+        "summary": "Get Syllabus",
+        "operationId": "get_syllabus_api_v1_syllabuses__syllabus_id__get",
+        "parameters": [
+          {
+            "name": "syllabus_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Syllabus Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyllabusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "syllabuses"
+        ],
+        "summary": "Update Syllabus",
+        "operationId": "update_syllabus_api_v1_syllabuses__syllabus_id__put",
+        "parameters": [
+          {
+            "name": "syllabus_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Syllabus Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyllabusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyllabusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "syllabuses"
+        ],
+        "summary": "Delete Syllabus",
+        "operationId": "delete_syllabus_api_v1_syllabuses__syllabus_id__delete",
+        "parameters": [
+          {
+            "name": "syllabus_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Syllabus Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/departments/": {
+      "post": {
+        "tags": [
+          "departments"
+        ],
+        "summary": "Create Department",
+        "operationId": "create_department_api_v1_departments__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "departments"
+        ],
+        "summary": "Get Departments",
+        "operationId": "get_departments_api_v1_departments__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentResponse"
+                  },
+                  "title": "Response Get Departments Api V1 Departments  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/departments/{dept_id}": {
+      "get": {
+        "tags": [
+          "departments"
+        ],
+        "summary": "Get Department",
+        "operationId": "get_department_api_v1_departments__dept_id__get",
+        "parameters": [
+          {
+            "name": "dept_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dept Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "departments"
+        ],
+        "summary": "Update Department",
+        "operationId": "update_department_api_v1_departments__dept_id__put",
+        "parameters": [
+          {
+            "name": "dept_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dept Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "departments"
+        ],
+        "summary": "Delete Department",
+        "operationId": "delete_department_api_v1_departments__dept_id__delete",
+        "parameters": [
+          {
+            "name": "dept_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dept Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/semesters/": {
+      "post": {
+        "tags": [
+          "semesters"
+        ],
+        "summary": "Create Semester",
+        "operationId": "create_semester_api_v1_semesters__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SemesterCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemesterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/bulk": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Bulk Enroll Students",
+        "description": "Gán nhiều sinh viên vào 1 lớp học.\n\nExample request:\n{\n    \"class_id\": 1,\n    \"student_ids\": [\n        \"uuid-1\",\n        \"uuid-2\",\n        \"uuid-3\"\n    ]\n}",
+        "operationId": "bulk_enroll_students_api_v1_enrollments_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkEnrollmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkEnrollmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Enroll Student",
+        "description": "Gán 1 sinh viên vào lớp",
+        "operationId": "enroll_student_api_v1_enrollments__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassEnrollmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassEnrollmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/class/{class_id}": {
+      "get": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Get Class Enrollments",
+        "description": "Lấy danh sách sinh viên đã ghi danh vào lớp",
+        "operationId": "get_class_enrollments_api_v1_enrollments_class__class_id__get",
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Class Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClassEnrollmentResponse"
+                  },
+                  "title": "Response Get Class Enrollments Api V1 Enrollments Class  Class Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/student/{student_id}": {
+      "get": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Get Student Enrollments",
+        "description": "Lấy danh sách lớp mà sinh viên đã ghi danh",
+        "operationId": "get_student_enrollments_api_v1_enrollments_student__student_id__get",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClassEnrollmentResponse"
+                  },
+                  "title": "Response Get Student Enrollments Api V1 Enrollments Student  Student Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}": {
+      "put": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Update Enrollment",
+        "description": "Cập nhật trạng thái enrollment (active, dropped, completed)",
+        "operationId": "update_enrollment_api_v1_enrollments__enrollment_id__put",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassEnrollmentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassEnrollmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Delete Enrollment",
+        "description": "Xóa enrollment (rút khỏi lớp)",
+        "operationId": "delete_enrollment_api_v1_enrollments__enrollment_id__delete",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/notifications": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Get user notifications",
+        "description": "Get paginated list of notifications for the current user.\n\nQuery Parameters:\n- `skip`: Offset for pagination (default: 0)\n- `limit`: Number of notifications per page (default: 20, max: 100)\n- `unread_only`: Show only unread notifications (default: false)\n- `notification_type`: Filter by type (SYSTEM, MILESTONE, SUBMISSION, TEAM, MENTION, TASK)\n\nReturns:\n    NotificationListResponse: List of notifications with total count and unread count",
+        "operationId": "get_user_notifications_api_v1_notifications_notifications_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of notifications to skip",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "Number of notifications to skip"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Number of notifications to return",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Number of notifications to return"
+          },
+          {
+            "name": "unread_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Return only unread notifications",
+              "default": false,
+              "title": "Unread Only"
+            },
+            "description": "Return only unread notifications"
+          },
+          {
+            "name": "notification_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by notification type",
+              "title": "Notification Type"
+            },
+            "description": "Filter by notification type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Delete all read notifications",
+        "description": "Delete all read notifications for the current user.\n\nReturns:\n    Success message with count of deleted notifications",
+        "operationId": "delete_all_read_notifications_api_v1_notifications_notifications_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Delete All Read Notifications Api V1 Notifications Notifications Delete"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/notifications/read": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark notifications as read",
+        "description": "Mark one or more notifications as read.\n\nRequest Body:\n- `notification_ids`: List of notification IDs to mark as read\n\nReturns:\n    Success message with count of updated notifications\n    \nRaises:\n    HTTPException 404: If no notifications found for the given IDs",
+        "operationId": "mark_notifications_as_read_api_v1_notifications_notifications_read_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationMarkRead"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Mark Notifications As Read Api V1 Notifications Notifications Read Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/notifications/read-all": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark all notifications as read",
+        "description": "Mark ALL user notifications as read.\n\nReturns:\n    Success message with count of updated notifications",
+        "operationId": "mark_all_notifications_as_read_api_v1_notifications_notifications_read_all_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Mark All Notifications As Read Api V1 Notifications Notifications Read All Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/notifications/stats": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Get notification statistics",
+        "description": "Get notification statistics for the current user.\n\nReturns:\n    NotificationStats: Total count, unread count, and breakdown by type",
+        "operationId": "get_notification_stats_api_v1_notifications_notifications_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationStats"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/notifications/{notification_id}": {
+      "delete": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Delete a notification",
+        "description": "Delete a specific notification.\n\nArgs:\n    notification_id: ID of notification to delete\n    \nRaises:\n    HTTPException 404: Notification not found or doesn't belong to user",
+        "operationId": "delete_notification_api_v1_notifications_notifications__notification_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user-import/users/import": {
+      "post": {
+        "tags": [
+          "user-import"
+        ],
+        "summary": "Import users from Excel/CSV file",
+        "description": "Import multiple users from Excel or CSV file.\n\n**Required Permissions:** ADMIN or STAFF only\n\n**File Format:**\n- Excel (.xlsx, .xls) or CSV (.csv)\n- Required columns:\n    - `email`: User email (must be unique)\n    - `full_name`: Full name\n    - `role_name`: One of [ADMIN, STAFF, HEAD_DEPT, LECTURER, STUDENT]\n- Optional columns:\n    - `dept_name`: Department name (required for LECTURER and STUDENT)\n    - `phone`: Phone number\n\n**Default Password:**\n- Format: `CollabSphere@{username}`\n- Example: `student123@university.edu` -\u003E `CollabSphere@student123`\n- Users should change password on first login\n\n**Example Excel/CSV:**\n```\nemail                    | full_name      | role_name | dept_name              | phone\nstudent1@university.edu  | Nguyễn Văn A   | STUDENT   | Software Engineering   | 0912345678\nlecturer@university.edu  | Trần Thị B     | LECTURER  | Software Engineering   | 0987654321\nstaff@university.edu     | Lê Văn C       | STAFF     |                        | 0901234567\n```\n\n**Response:**\n- `total_rows`: Total number of rows processed\n- `successful`: Number of users created\n- `failed`: Number of rows with errors\n- `skipped`: Number of rows skipped (e.g., duplicate emails)\n- `results`: Detailed result for each row\n\nArgs:\n    file: Uploaded Excel/CSV file\n    \nReturns:\n    UserImportResponse: Import statistics and detailed results\n    \nRaises:\n    HTTPException 403: User lacks permission (not ADMIN/STAFF)\n    HTTPException 400: Invalid file format or missing columns\n    HTTPException 422: Invalid data in file",
+        "operationId": "import_users_from_file_api_v1_user_import_users_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_users_from_file_api_v1_user_import_users_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserImportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/user-import/users/import/template": {
+      "get": {
+        "tags": [
+          "user-import"
+        ],
+        "summary": "Download user import template",
+        "description": "Download Excel template for user import.\n\n**Required Permissions:** ADMIN or STAFF only\n\nReturns:\n    StreamingResponse: Excel file with sample data\n    \nRaises:\n    HTTPException 403: User lacks permission",
+        "operationId": "download_import_template_api_v1_user_import_users_import_template_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/channels/": {
+      "post": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "Create Channel",
+        "description": "Tạo channel mới trong team.\nChỉ team members mới có quyền tạo.",
+        "operationId": "create_channel_api_v1_channels__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChannelCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "List Channels",
+        "description": "Lấy danh sách tất cả channels trong team.\nChỉ team members mới có quyền xem.",
+        "operationId": "list_channels_api_v1_channels__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChannelResponse"
+                  },
+                  "title": "Response List Channels Api V1 Channels  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/channels/{channel_id}": {
+      "get": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "Get Channel",
+        "description": "Lấy chi tiết channel.",
+        "operationId": "get_channel_api_v1_channels__channel_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Channel Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "Update Channel",
+        "description": "Cập nhật channel.",
+        "operationId": "update_channel_api_v1_channels__channel_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Channel Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChannelUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "Delete Channel",
+        "description": "Xóa channel.\nCascade delete sẽ xóa tất cả messages trong channel.",
+        "operationId": "delete_channel_api_v1_channels__channel_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Channel Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/messages/": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Send Message",
+        "description": "Gửi tin nhắn mới vào channel.\nChỉ team members mới có quyền gửi.",
+        "operationId": "send_message_api_v1_messages__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "List Messages",
+        "description": "Lấy danh sách tin nhắn trong channel (có pagination).\nSắp xếp theo thời gian mới nhất trước.",
+        "operationId": "list_messages_api_v1_messages__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Channel Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/messages/{message_id}": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Get Message",
+        "description": "Lấy chi tiết một tin nhắn.",
+        "operationId": "get_message_api_v1_messages__message_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Message Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Edit Message",
+        "description": "Sửa tin nhắn.\nChỉ sender mới có quyền sửa.",
+        "operationId": "edit_message_api_v1_messages__message_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Message Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Delete Message",
+        "description": "Xóa tin nhắn.\nSender hoặc team lead có quyền xóa.",
+        "operationId": "delete_message_api_v1_messages__message_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Message Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mentoring/logs": {
+      "post": {
+        "tags": [
+          "mentoring"
+        ],
+        "summary": "Create Mentoring Log",
+        "description": "Táº¡o mentoring log má»›i.\nChá»‰ Lecturer (role_id=4) hoáº·c Admin má»›i cÃ³ thá»ƒ táº¡o.",
+        "operationId": "create_mentoring_log_api_v1_mentoring_logs_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MentoringLogCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MentoringLogResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "mentoring"
+        ],
+        "summary": "List Mentoring Logs",
+        "description": "Láº¥y danh sÃ¡ch mentoring logs cá»§a team.\nTeam members vÃ  Lecturers cÃ³ thá»ƒ xem.",
+        "operationId": "list_mentoring_logs_api_v1_mentoring_logs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MentoringLogResponse"
+                  },
+                  "title": "Response List Mentoring Logs Api V1 Mentoring Logs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mentoring/logs/{log_id}": {
+      "get": {
+        "tags": [
+          "mentoring"
+        ],
+        "summary": "Get Mentoring Log",
+        "description": "Láº¥y chi tiáº¿t mentoring log.",
+        "operationId": "get_mentoring_log_api_v1_mentoring_logs__log_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "log_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Log Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MentoringLogResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "mentoring"
+        ],
+        "summary": "Update Mentoring Log",
+        "description": "Cáº­p nháº­t mentoring log.\nChá»‰ mentor cá»§a log má»›i cÃ³ quyá»n cáº­p nháº­t.",
+        "operationId": "update_mentoring_log_api_v1_mentoring_logs__log_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "log_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Log Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MentoringLogUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MentoringLogResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "mentoring"
+        ],
+        "summary": "Delete Mentoring Log",
+        "description": "XÃ³a mentoring log.\nChá»‰ mentor hoáº·c Admin má»›i cÃ³ quyá»n xÃ³a.",
+        "operationId": "delete_mentoring_log_api_v1_mentoring_logs__log_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "log_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Log Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mentoring/suggestions": {
+      "post": {
+        "tags": [
+          "mentoring"
+        ],
+        "summary": "Generate Ai Suggestions",
+        "description": "Táº¡o AI suggestions cho team.\nTá»± Ä‘á»™ng táº¡o mentoring log má»›i vá»›i suggestions.\nChá»‰ Lecturer cÃ³ quyá»n gá»i.",
+        "operationId": "generate_ai_suggestions_api_v1_mentoring_suggestions_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AISuggestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AISuggestionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mentoring/team-progress/{team_id}": {
+      "get": {
+        "tags": [
+          "mentoring"
+        ],
+        "summary": "Get Team Progress Endpoint",
+        "description": "Láº¥y thá»‘ng kÃª tiáº¿n Ä‘á»™ team.\nDÃ¹ng Ä‘á»ƒ hiá»ƒn thá»‹ trÆ°á»›c khi generate AI suggestions.",
+        "operationId": "get_team_progress_endpoint_api_v1_mentoring_team_progress__team_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamProgressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mentoring/analyze-reviews/{team_id}": {
+      "post": {
+        "tags": [
+          "mentoring"
+        ],
+        "summary": "Analyze Team Reviews",
+        "description": "PhÃ¢n tÃ­ch peer reviews cá»§a team báº±ng AI.\nChá»‰ Lecturer cÃ³ quyá»n.",
+        "operationId": "analyze_team_reviews_api_v1_mentoring_analyze_reviews__team_id__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/init-db": {
       "post": {
         "tags": [
@@ -1303,6 +4283,200 @@
   },
   "components": {
     "schemas": {
+      "AISuggestionRequest": {
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context",
+            "description": "Additional context for AI"
+          },
+          "include_peer_reviews": {
+            "type": "boolean",
+            "title": "Include Peer Reviews",
+            "description": "Include peer review data",
+            "default": true
+          },
+          "include_tasks": {
+            "type": "boolean",
+            "title": "Include Tasks",
+            "description": "Include task progress data",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "AISuggestionRequest"
+      },
+      "AISuggestionResponse": {
+        "properties": {
+          "suggestions": {
+            "type": "string",
+            "title": "Suggestions"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "log_id": {
+            "type": "integer",
+            "title": "Log Id"
+          },
+          "context_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "suggestions",
+          "generated_at",
+          "log_id"
+        ],
+        "title": "AISuggestionResponse"
+      },
+      "AcademicClassCreate": {
+        "properties": {
+          "class_code": {
+            "type": "string",
+            "title": "Class Code"
+          },
+          "semester_id": {
+            "type": "integer",
+            "title": "Semester Id"
+          },
+          "subject_id": {
+            "type": "integer",
+            "title": "Subject Id"
+          },
+          "lecturer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lecturer Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_code",
+          "semester_id",
+          "subject_id",
+          "lecturer_id"
+        ],
+        "title": "AcademicClassCreate"
+      },
+      "AcademicClassResponse": {
+        "properties": {
+          "class_id": {
+            "type": "integer",
+            "title": "Class Id"
+          },
+          "class_code": {
+            "type": "string",
+            "title": "Class Code"
+          },
+          "semester_id": {
+            "type": "integer",
+            "title": "Semester Id"
+          },
+          "subject_id": {
+            "type": "integer",
+            "title": "Subject Id"
+          },
+          "lecturer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lecturer Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_id",
+          "class_code",
+          "semester_id",
+          "subject_id",
+          "lecturer_id"
+        ],
+        "title": "AcademicClassResponse"
+      },
+      "AcademicClassUpdate": {
+        "properties": {
+          "class_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class Code"
+          },
+          "semester_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semester Id"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "lecturer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lecturer Id"
+          }
+        },
+        "type": "object",
+        "title": "AcademicClassUpdate"
+      },
+      "Body_import_users_from_file_api_v1_user_import_users_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Excel (.xlsx, .xls) or CSV file"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_users_from_file_api_v1_user_import_users_import_post"
+      },
       "Body_login_access_token_api_v1_auth_login_post": {
         "properties": {
           "grant_type": {
@@ -1360,6 +4534,359 @@
         ],
         "title": "Body_login_access_token_api_v1_auth_login_post"
       },
+      "BulkEnrollmentCreate": {
+        "properties": {
+          "class_id": {
+            "type": "integer",
+            "title": "Class Id"
+          },
+          "student_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Student Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_id",
+          "student_ids"
+        ],
+        "title": "BulkEnrollmentCreate",
+        "description": "Gán nhiều sinh viên vào 1 lớp"
+      },
+      "BulkEnrollmentResponse": {
+        "properties": {
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count"
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count"
+          },
+          "enrollments": {
+            "items": {
+              "$ref": "#/components/schemas/ClassEnrollmentResponse"
+            },
+            "type": "array",
+            "title": "Enrollments"
+          },
+          "errors": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success_count",
+          "failed_count",
+          "enrollments",
+          "errors"
+        ],
+        "title": "BulkEnrollmentResponse",
+        "description": "Response cho bulk enrollment"
+      },
+      "ChannelCreate": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id",
+            "description": "ID của team sở hữu channel"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type",
+            "description": "Loại channel",
+            "default": "general"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id",
+          "name"
+        ],
+        "title": "ChannelCreate"
+      },
+      "ChannelResponse": {
+        "properties": {
+          "channel_id": {
+            "type": "integer",
+            "title": "Channel Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "message_count": {
+            "type": "integer",
+            "title": "Message Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel_id",
+          "team_id",
+          "name",
+          "type",
+          "created_at"
+        ],
+        "title": "ChannelResponse"
+      },
+      "ChannelUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          }
+        },
+        "type": "object",
+        "title": "ChannelUpdate"
+      },
+      "ClassEnrollmentCreate": {
+        "properties": {
+          "class_id": {
+            "type": "integer",
+            "title": "Class Id"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_id",
+          "student_id"
+        ],
+        "title": "ClassEnrollmentCreate"
+      },
+      "ClassEnrollmentResponse": {
+        "properties": {
+          "enrollment_id": {
+            "type": "integer",
+            "title": "Enrollment Id"
+          },
+          "class_id": {
+            "type": "integer",
+            "title": "Class Id"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "enrolled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Enrolled At"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enrollment_id",
+          "class_id",
+          "student_id",
+          "enrolled_at"
+        ],
+        "title": "ClassEnrollmentResponse"
+      },
+      "ClassEnrollmentUpdate": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "ClassEnrollmentUpdate"
+      },
+      "DepartmentCreate": {
+        "properties": {
+          "dept_name": {
+            "type": "string",
+            "title": "Dept Name"
+          },
+          "dept_head_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Head Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dept_name"
+        ],
+        "title": "DepartmentCreate"
+      },
+      "DepartmentInfo": {
+        "properties": {
+          "dept_id": {
+            "type": "integer",
+            "title": "Dept Id"
+          },
+          "dept_name": {
+            "type": "string",
+            "title": "Dept Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dept_id",
+          "dept_name"
+        ],
+        "title": "DepartmentInfo",
+        "description": "Department information for user profile response."
+      },
+      "DepartmentResponse": {
+        "properties": {
+          "dept_id": {
+            "type": "integer",
+            "title": "Dept Id"
+          },
+          "dept_name": {
+            "type": "string",
+            "title": "Dept Name"
+          },
+          "dept_head_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Head Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dept_id",
+          "dept_name",
+          "dept_head_id"
+        ],
+        "title": "DepartmentResponse"
+      },
+      "DepartmentUpdate": {
+        "properties": {
+          "dept_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Name"
+          },
+          "dept_head_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Head Id"
+          }
+        },
+        "type": "object",
+        "title": "DepartmentUpdate"
+      },
       "EvaluationCreate": {
         "properties": {
           "team_id": {
@@ -1394,6 +4921,68 @@
         ],
         "title": "EvaluationCreate"
       },
+      "EvaluationResponse": {
+        "properties": {
+          "evaluation_id": {
+            "type": "integer",
+            "title": "Evaluation Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "topic_id": {
+            "type": "integer",
+            "title": "Topic Id"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "evaluator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluator"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evaluation_id",
+          "team_id",
+          "topic_id",
+          "score"
+        ],
+        "title": "EvaluationResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1406,6 +4995,1169 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "MentoringLogCreate": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "session_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Notes"
+          },
+          "discussion_points": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discussion Points"
+          },
+          "meeting_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id"
+        ],
+        "title": "MentoringLogCreate"
+      },
+      "MentoringLogResponse": {
+        "properties": {
+          "log_id": {
+            "type": "integer",
+            "title": "Log Id"
+          },
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "mentor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Mentor Id"
+          },
+          "mentor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentor Name"
+          },
+          "session_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Notes"
+          },
+          "discussion_points": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discussion Points"
+          },
+          "ai_suggestions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Suggestions"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "meeting_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "log_id",
+          "team_id",
+          "mentor_id",
+          "session_notes",
+          "discussion_points",
+          "ai_suggestions",
+          "feedback",
+          "meeting_date",
+          "created_at"
+        ],
+        "title": "MentoringLogResponse"
+      },
+      "MentoringLogUpdate": {
+        "properties": {
+          "session_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Notes"
+          },
+          "discussion_points": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discussion Points"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "title": "MentoringLogUpdate"
+      },
+      "MessageCreate": {
+        "properties": {
+          "channel_id": {
+            "type": "integer",
+            "title": "Channel Id",
+            "description": "ID của channel"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Content"
+          },
+          "reply_to_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reply To Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel_id",
+          "content"
+        ],
+        "title": "MessageCreate"
+      },
+      "MessageListResponse": {
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "type": "array",
+            "title": "Messages"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More"
+          },
+          "skip": {
+            "type": "integer",
+            "title": "Skip"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "messages",
+          "total",
+          "has_more",
+          "skip",
+          "limit"
+        ],
+        "title": "MessageListResponse"
+      },
+      "MessageResponse": {
+        "properties": {
+          "message_id": {
+            "type": "integer",
+            "title": "Message Id"
+          },
+          "channel_id": {
+            "type": "integer",
+            "title": "Channel Id"
+          },
+          "sender_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sender Id"
+          },
+          "sender_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Name"
+          },
+          "sender_avatar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Avatar"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sent At"
+          },
+          "is_edited": {
+            "type": "boolean",
+            "title": "Is Edited",
+            "default": false
+          },
+          "reply_to_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reply To Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "channel_id",
+          "sender_id",
+          "content",
+          "sent_at"
+        ],
+        "title": "MessageResponse"
+      },
+      "MessageUpdate": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "MessageUpdate"
+      },
+      "NotificationListResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total number of notifications"
+          },
+          "unread_count": {
+            "type": "integer",
+            "title": "Unread Count",
+            "description": "Number of unread notifications"
+          },
+          "notifications": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            },
+            "type": "array",
+            "title": "Notifications"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "unread_count",
+          "notifications"
+        ],
+        "title": "NotificationListResponse",
+        "description": "Schema for paginated notification list.",
+        "example": {
+          "notifications": [
+            {
+              "action_url": "/milestones/123",
+              "created_at": "2025-01-07T10:30:00Z",
+              "is_read": false,
+              "message": "Milestone 'Sprint 1 Review' is due in 2 days",
+              "notification_id": 123,
+              "related_entity_id": 123,
+              "related_entity_type": "milestone",
+              "title": "Milestone Deadline Approaching",
+              "type": "MILESTONE",
+              "user_id": "550e8400-e29b-41d4-a716-446655440000"
+            }
+          ],
+          "total": 25,
+          "unread_count": 5
+        }
+      },
+      "NotificationMarkRead": {
+        "properties": {
+          "notification_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Notification Ids",
+            "description": "List of notification IDs to mark as read"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notification_ids"
+        ],
+        "title": "NotificationMarkRead",
+        "description": "Schema for marking notification(s) as read.",
+        "example": {
+          "notification_ids": [1, 2, 3, 5, 8]
+        }
+      },
+      "NotificationResponse": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Notification type: SYSTEM, MILESTONE, SUBMISSION, TEAM, MENTION, TASK"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Title",
+            "description": "Notification title"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Notification message/details"
+          },
+          "related_entity_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Entity Type",
+            "description": "Related entity type (team, project, milestone)"
+          },
+          "related_entity_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Entity Id",
+            "description": "Related entity ID"
+          },
+          "action_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Url",
+            "description": "URL for action button"
+          },
+          "notification_id": {
+            "type": "integer",
+            "title": "Notification Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "is_read": {
+            "type": "boolean",
+            "title": "Is Read"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "notification_id",
+          "user_id",
+          "is_read",
+          "created_at"
+        ],
+        "title": "NotificationResponse",
+        "description": "Schema for notification response.",
+        "example": {
+          "action_url": "/milestones/123",
+          "created_at": "2025-01-07T10:30:00Z",
+          "is_read": false,
+          "message": "Milestone 'Sprint 1 Review' is due in 2 days",
+          "notification_id": 123,
+          "related_entity_id": 123,
+          "related_entity_type": "milestone",
+          "title": "Milestone Deadline Approaching",
+          "type": "MILESTONE",
+          "user_id": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      },
+      "NotificationStats": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "unread": {
+            "type": "integer",
+            "title": "Unread"
+          },
+          "by_type": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Type",
+            "description": "Count of notifications by type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "unread",
+          "by_type"
+        ],
+        "title": "NotificationStats",
+        "description": "Schema for notification statistics.",
+        "example": {
+          "by_type": {
+            "MILESTONE": 15,
+            "SUBMISSION": 10,
+            "SYSTEM": 5,
+            "TASK": 12,
+            "TEAM": 8
+          },
+          "total": 50,
+          "unread": 12
+        }
+      },
+      "ProjectCreate": {
+        "properties": {
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "topic_id": {
+            "type": "integer",
+            "title": "Topic Id"
+          },
+          "class_id": {
+            "type": "integer",
+            "title": "Class Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_name",
+          "topic_id",
+          "class_id"
+        ],
+        "title": "ProjectCreate",
+        "description": "Schema for creating a Project."
+      },
+      "ProjectResponse": {
+        "properties": {
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name"
+          },
+          "project_id": {
+            "type": "integer",
+            "title": "Project Id"
+          },
+          "topic_id": {
+            "type": "integer",
+            "title": "Topic Id"
+          },
+          "class_id": {
+            "type": "integer",
+            "title": "Class Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "claimed_by_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed By Id"
+          },
+          "claimed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "topic_id",
+          "class_id"
+        ],
+        "title": "ProjectResponse",
+        "description": "Schema for Project response."
+      },
+      "RoleInfo": {
+        "properties": {
+          "role_id": {
+            "type": "integer",
+            "title": "Role Id"
+          },
+          "role_name": {
+            "type": "string",
+            "title": "Role Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role_id",
+          "role_name"
+        ],
+        "title": "RoleInfo",
+        "description": "Role information for user profile response."
+      },
+      "SemesterCreate": {
+        "properties": {
+          "semester_code": {
+            "type": "string",
+            "title": "Semester Code"
+          },
+          "semester_name": {
+            "type": "string",
+            "title": "Semester Name"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "semester_code",
+          "semester_name",
+          "start_date",
+          "end_date"
+        ],
+        "title": "SemesterCreate"
+      },
+      "SemesterResponse": {
+        "properties": {
+          "semester_id": {
+            "type": "integer",
+            "title": "Semester Id"
+          },
+          "semester_code": {
+            "type": "string",
+            "title": "Semester Code"
+          },
+          "semester_name": {
+            "type": "string",
+            "title": "Semester Name"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "semester_id",
+          "semester_code",
+          "semester_name",
+          "start_date",
+          "end_date"
+        ],
+        "title": "SemesterResponse"
+      },
+      "SubjectCreate": {
+        "properties": {
+          "subject_code": {
+            "type": "string",
+            "title": "Subject Code"
+          },
+          "subject_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Name"
+          },
+          "dept_id": {
+            "type": "integer",
+            "title": "Dept Id"
+          },
+          "credits": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_code",
+          "dept_id"
+        ],
+        "title": "SubjectCreate"
+      },
+      "SubjectResponse": {
+        "properties": {
+          "subject_id": {
+            "type": "integer",
+            "title": "Subject Id"
+          },
+          "subject_code": {
+            "type": "string",
+            "title": "Subject Code"
+          },
+          "subject_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Name"
+          },
+          "dept_id": {
+            "type": "integer",
+            "title": "Dept Id"
+          },
+          "credits": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_id",
+          "subject_code",
+          "dept_id"
+        ],
+        "title": "SubjectResponse"
+      },
+      "SubjectUpdate": {
+        "properties": {
+          "subject_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Code"
+          },
+          "subject_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Name"
+          },
+          "dept_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Id"
+          },
+          "credits": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credits"
+          }
+        },
+        "type": "object",
+        "title": "SubjectUpdate"
+      },
+      "SyllabusCreate": {
+        "properties": {
+          "subject_id": {
+            "type": "integer",
+            "title": "Subject Id",
+            "description": "ID of the subject"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "min_score_to_pass": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Score To Pass"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_id"
+        ],
+        "title": "SyllabusCreate"
+      },
+      "SyllabusResponse": {
+        "properties": {
+          "syllabus_id": {
+            "type": "integer",
+            "title": "Syllabus Id"
+          },
+          "subject_id": {
+            "type": "integer",
+            "title": "Subject Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "min_score_to_pass": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Score To Pass"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "syllabus_id",
+          "subject_id",
+          "is_active"
+        ],
+        "title": "SyllabusResponse"
+      },
+      "SyllabusUpdate": {
+        "properties": {
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "min_score_to_pass": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Score To Pass"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "SyllabusUpdate"
+      },
+      "SyllabusWithSubject": {
+        "properties": {
+          "syllabus_id": {
+            "type": "integer",
+            "title": "Syllabus Id"
+          },
+          "subject_id": {
+            "type": "integer",
+            "title": "Subject Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "min_score_to_pass": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Score To Pass"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "subject_code": {
+            "type": "string",
+            "title": "Subject Code"
+          },
+          "subject_name": {
+            "type": "string",
+            "title": "Subject Name"
+          },
+          "department_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "syllabus_id",
+          "subject_id",
+          "is_active",
+          "subject_code",
+          "subject_name"
+        ],
+        "title": "SyllabusWithSubject"
       },
       "TaskCreate": {
         "properties": {
@@ -1425,27 +6177,9 @@
             "title": "Description"
           },
           "priority": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Priority",
             "default": "MEDIUM"
-          },
-          "team_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Team Id"
           },
           "sprint_id": {
             "anyOf": [
@@ -1458,7 +6192,7 @@
             ],
             "title": "Sprint Id"
           },
-          "assignee_id": {
+          "assigned_to": {
             "anyOf": [
               {
                 "type": "string",
@@ -1468,7 +6202,7 @@
                 "type": "null"
               }
             ],
-            "title": "Assignee Id"
+            "title": "Assigned To"
           },
           "due_date": {
             "anyOf": [
@@ -1481,6 +6215,28 @@
               }
             ],
             "title": "Due Date"
+          },
+          "blocked_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blocked Reason"
+          },
+          "depends_on": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depends On"
           }
         },
         "type": "object",
@@ -1489,27 +6245,6 @@
         ],
         "title": "TaskCreate",
         "description": "Schema for creating a Task."
-      },
-      "TaskPriority": {
-        "type": "string",
-        "enum": [
-          "LOW",
-          "MEDIUM",
-          "HIGH"
-        ],
-        "title": "TaskPriority",
-        "description": "Task priority enum."
-      },
-      "TaskStatus": {
-        "type": "string",
-        "enum": [
-          "TODO",
-          "DOING",
-          "DONE",
-          "BLOCKED"
-        ],
-        "title": "TaskStatus",
-        "description": "Task status enum."
       },
       "TaskUpdate": {
         "properties": {
@@ -1535,27 +6270,18 @@
             ],
             "title": "Description"
           },
-          "priority": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TaskPriority"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "status": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/TaskStatus"
+                "type": "string"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Status"
           },
-          "assignee_id": {
+          "assigned_to": {
             "anyOf": [
               {
                 "type": "string",
@@ -1565,7 +6291,18 @@
                 "type": "null"
               }
             ],
-            "title": "Assignee Id"
+            "title": "Assigned To"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
           },
           "due_date": {
             "anyOf": [
@@ -1578,6 +6315,28 @@
               }
             ],
             "title": "Due Date"
+          },
+          "blocked_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blocked Reason"
+          },
+          "depends_on": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depends On"
           }
         },
         "type": "object",
@@ -1602,7 +6361,14 @@
             "title": "Name"
           },
           "project_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Project Id"
           },
           "description": {
@@ -1619,11 +6385,95 @@
         },
         "type": "object",
         "required": [
-          "name",
-          "project_id"
+          "name"
         ],
         "title": "TeamCreate",
         "description": "Schema for creating a Team."
+      },
+      "TeamProgressResponse": {
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "title": "Team Id"
+          },
+          "team_name": {
+            "type": "string",
+            "title": "Team Name"
+          },
+          "sprint_velocity": {
+            "type": "number",
+            "title": "Sprint Velocity"
+          },
+          "tasks_done": {
+            "type": "integer",
+            "title": "Tasks Done"
+          },
+          "tasks_total": {
+            "type": "integer",
+            "title": "Tasks Total"
+          },
+          "days_remaining": {
+            "type": "integer",
+            "title": "Days Remaining"
+          },
+          "avg_collaboration": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Collaboration"
+          },
+          "avg_communication": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Communication"
+          },
+          "avg_contribution": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Contribution"
+          }
+        },
+        "type": "object",
+        "required": [
+          "team_id",
+          "team_name",
+          "sprint_velocity",
+          "tasks_done",
+          "tasks_total",
+          "days_remaining"
+        ],
+        "title": "TeamProgressResponse"
+      },
+      "TeamProjectSelect": {
+        "properties": {
+          "project_id": {
+            "type": "integer",
+            "title": "Project Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id"
+        ],
+        "title": "TeamProjectSelect",
+        "description": "Schema for selecting a project for a team."
       },
       "Token": {
         "properties": {
@@ -1670,6 +6520,39 @@
               }
             ],
             "title": "Requirements"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "tech_stack": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tech Stack"
+          },
+          "dept_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Id"
           }
         },
         "type": "object",
@@ -1743,6 +6626,300 @@
           "password"
         ],
         "title": "UserCreate"
+      },
+      "UserImportResponse": {
+        "properties": {
+          "total_rows": {
+            "type": "integer",
+            "title": "Total Rows"
+          },
+          "successful": {
+            "type": "integer",
+            "title": "Successful"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/UserImportResultRow"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_rows",
+          "successful",
+          "failed",
+          "skipped",
+          "results"
+        ],
+        "title": "UserImportResponse",
+        "description": "Response for bulk user import.",
+        "example": {
+          "failed": 3,
+          "results": [
+            {
+              "email": "student1@university.edu",
+              "message": "User created successfully",
+              "row_number": 1,
+              "status": "success",
+              "user_id": "550e8400-e29b-41d4-a716-446655440000"
+            },
+            {
+              "email": "duplicate@university.edu",
+              "message": "Email already exists",
+              "row_number": 2,
+              "status": "skipped"
+            }
+          ],
+          "skipped": 2,
+          "successful": 95,
+          "total_rows": 100
+        }
+      },
+      "UserImportResultRow": {
+        "properties": {
+          "row_number": {
+            "type": "integer",
+            "title": "Row Number"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row_number",
+          "email",
+          "status"
+        ],
+        "title": "UserImportResultRow",
+        "description": "Result for a single imported user.",
+        "example": {
+          "email": "student@university.edu",
+          "message": "User created successfully",
+          "row_number": 1,
+          "status": "success",
+          "user_id": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      },
+      "UserProfileResponse": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name",
+            "description": "User's full name"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url",
+            "description": "URL to user avatar"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone",
+            "description": "Phone number"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio",
+            "description": "User biography"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/RoleInfo"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "role",
+          "is_active",
+          "created_at"
+        ],
+        "title": "UserProfileResponse",
+        "description": "Schema for user profile response (GET /me, PUT /me).",
+        "example": {
+          "avatar_url": "https://example.com/avatar.jpg",
+          "bio": "Software Engineering student",
+          "created_at": "2024-01-15T10:30:00Z",
+          "department": {
+            "dept_id": 1,
+            "dept_name": "Software Engineering"
+          },
+          "email": "student@university.edu",
+          "full_name": "Nguyễn Văn A",
+          "is_active": true,
+          "phone": "0912345678",
+          "role": {
+            "role_id": 5,
+            "role_name": "STUDENT"
+          },
+          "user_id": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      },
+      "UserProfileUpdate": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name",
+            "description": "User's full name"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url",
+            "description": "URL to user avatar"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone",
+            "description": "Phone number"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio",
+            "description": "User biography"
+          }
+        },
+        "type": "object",
+        "title": "UserProfileUpdate",
+        "description": "Schema for updating user profile (PUT /me).",
+        "example": {
+          "avatar_url": "https://example.com/avatar.jpg",
+          "bio": "Software Engineering student passionate about AI and Web Development",
+          "full_name": "Nguyễn Văn A",
+          "phone": "0912345678"
+        }
       },
       "UserResponse": {
         "properties": {
