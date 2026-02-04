@@ -1,175 +1,164 @@
 import axios from 'axios';
-import { mockSubjects, mockClasses, mockUsers, mockProjects } from './mockData';
 
-// 1. Định nghĩa Base URL
+// 1. Define Base URL
 // For local development with Docker: http://localhost:8000/api/v1
-// This is the ONLY URL that works from browser running on your machine
-const BASE_URL = 'http://localhost:8000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,
 });
 
-// Debug: Log BASE_URL để kiểm tra
+// Debug: Log BASE_URL
 console.log('[API] Initialized with baseURL:', BASE_URL);
 
-// 2. Thêm token vào header 
+// 2. Add token to header
 api.interceptors.request.use((config) => {
+  // User requested checking token key. logic in AuthContext uses 'access_token'.
   const token = localStorage.getItem('access_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   console.log('[API] Request:', config.method?.toUpperCase(), config.baseURL + config.url);
   return config;
 });
 
-// Helper to simulate network delay
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+// --- API Services ---
 
-// --- LocalStorage Helpers ---
-const loadData = (key, defaultData) => {
-  try {
-    const stored = localStorage.getItem(key);
-    if (stored) return JSON.parse(stored);
-  } catch (e) {
-    console.error(`Error parsing ${key} from localStorage`, e);
-  }
-  localStorage.setItem(key, JSON.stringify(defaultData));
-  return [...defaultData]; // Return copy
-};
-
-const saveData = (key, data) => {
-  localStorage.setItem(key, JSON.stringify(data));
-};
-
-// Initialize Data
-let localUsers = loadData('users', mockUsers);
-let localSubjects = loadData('subjects', mockSubjects);
-let localClasses = loadData('classes', mockClasses);
-let localProjects = loadData('projects', mockProjects);
-
-
-// Helper for pagination & search
-const mockFetch = async (data, params) => {
-  await delay(500); // Simulate 500ms latency
-  let result = [...data];
-
-  // Search
-  if (params?.search) {
-    const s = params.search.toLowerCase();
-    result = result.filter(item =>
-      Object.values(item).some(val =>
-        String(val).toLowerCase().includes(s)
-      )
-    );
-  }
-
-  // Pagination
-  const skip = params?.skip || 0;
-  const limit = params?.limit || 10;
-
-  return {
-    data: result.slice(skip, skip + limit),
-    total: result.length
-  };
-};
-
-// 3. User Service 
+// User Service
 export const userService = {
-  updateProfile: async (data) => { await delay(500); return { data: { ...localUsers[0], ...data } }; },
-  changePassword: async (data) => { await delay(500); return { data: { success: true } }; },
-  uploadAvatar: async (file) => { await delay(500); return { data: { url: 'https://i.pravatar.cc/150' } }; },
-
-  // Admin only
-  getAll: (params) => mockFetch(localUsers, params),
-  create: async (data) => {
-    await delay(500);
-    if (localUsers.some(u => u.email === data.email)) {
-      throw new Error('Email already exists');
-    }
-    const newUser = { ...data, user_id: `u${Date.now()}` };
-    localUsers.push(newUser);
-    saveData('users', localUsers);
-    return { data: newUser };
+  // Use for Dashboard
+  getMe: async () => {
+    return api.get('/users/me');
   },
+  getAll: async (params) => {
+    return api.get('/users', { params });
+  },
+  assignRole: async (userId, roleId) => {
+    return api.patch(`/users/${userId}/role`, { role_id: roleId });
+  },
+  assignDepartment: async (userId, deptId) => {
+    return api.patch(`/users/${userId}/department`, { dept_id: deptId });
+  },
+  // Keep existing methods if needed by other parts, or assume they are replaced by profileService
+  // For now, mapping what was requested.
 };
 
-// 4. Subject Service 
-export const subjectService = {
-  getAll: (params) => mockFetch(localSubjects, params),
-  create: async (data) => {
-    await delay(500);
-    if (localSubjects.some(s => s.subject_code === data.subject_code)) {
-      throw new Error('Subject code already exists');
-    }
-    const newSubject = { ...data, subject_id: Date.now() };
-    localSubjects.push(newSubject);
-    saveData('subjects', localSubjects);
-    return { data: newSubject };
+// Profile Service
+export const profileService = {
+  getMe: async () => {
+    return api.get('/profile/me');
   },
-  update: async (id, data) => {
-    await delay(500);
-    const idx = localSubjects.findIndex(s => s.subject_id === id);
-    if (idx > -1) {
-      localSubjects[idx] = { ...localSubjects[idx], ...data };
-      saveData('subjects', localSubjects);
-    }
-    return { data: localSubjects[idx] };
-  },
-  delete: async (id) => {
-    await delay(500);
-    const idx = localSubjects.findIndex(s => s.subject_id === id);
-    if (idx > -1) {
-      localSubjects.splice(idx, 1);
-      saveData('subjects', localSubjects);
-    }
-    return { data: { success: true } };
+  updateMe: async (data) => {
+    return api.put('/profile/me', data);
   }
 };
 
-// 5. Class Service
-export const classService = {
-  getAll: (params) => mockFetch(localClasses, params),
-  create: async (data) => {
-    await delay(500);
-    if (localClasses.some(c => c.class_code === data.class_code)) {
-      throw new Error('Class code already exists');
-    }
-    const newClass = { ...data, class_id: Date.now() };
-    localClasses.push(newClass);
-    saveData('classes', localClasses);
-    return { data: newClass };
-  },
-  update: async (id, data) => {
-    await delay(500);
-    const idx = localClasses.findIndex(c => c.class_id === id);
-    if (idx > -1) {
-      localClasses[idx] = { ...localClasses[idx], ...data };
-      saveData('classes', localClasses);
-    }
-    return { data: localClasses[idx] };
-  },
-  delete: async (id) => {
-    await delay(500);
-    const idx = localClasses.findIndex(c => c.class_id === id);
-    if (idx > -1) {
-      localClasses.splice(idx, 1);
-      saveData('classes', localClasses);
-    }
-    return { data: { success: true } };
-  }
-};
-
-// 6. Project Service (For Student View)
+// Project Service
 export const projectService = {
-  getAll: (params) => mockFetch(localProjects, params),
-  update: async (key, data) => {
-    await delay(500);
-    const idx = localProjects.findIndex(p => p.key === key);
-    if (idx > -1) {
-      localProjects[idx] = { ...localProjects[idx], ...data };
-      saveData('projects', localProjects);
-    }
-    return { data: localProjects[idx] };
+  getAll: async (params) => {
+    // params might be search/filter
+    return api.get('/projects', { params });
+  },
+  claim: async (projectId) => {
+    return api.patch(`/projects/${projectId}/claim`);
   }
 };
 
+// Team Service
+export const teamService = {
+  getAll: async () => {
+    return api.get('/teams');
+  },
+  create: async (data) => {
+    return api.post('/teams', data);
+  },
+  getDetail: async (teamId) => {
+    return api.get(`/teams/${teamId}`);
+  },
+  join: async (teamId, data) => {
+    // data might contain password if required
+    return api.post(`/teams/${teamId}/join`, data);
+  },
+  joinByCode: async (code) => {
+    return api.post('/teams/join', { join_code: code });
+  },
+  leave: async (teamId) => {
+    return api.post(`/teams/${teamId}/leave`);
+  },
+  finalize: async (teamId) => {
+    return api.patch(`/teams/${teamId}/finalize`);
+  },
+  selectProject: async (teamId, projectId) => {
+    return api.patch(`/teams/${teamId}/select-project`, { project_id: projectId });
+  }
+};
+
+// Task Service (Kanban)
+export const taskService = {
+  // Sprints
+  createSprint: async (data) => {
+    return api.post('/tasks/sprints', data);
+  },
+  getSprint: async (sprintId) => {
+    return api.get(`/tasks/sprints/${sprintId}`);
+  },
+  getSprintTasks: async (sprintId) => {
+    return api.get(`/tasks/sprints/${sprintId}/tasks`);
+  },
+
+  // Tasks
+  getAllTasks: async (params) => {
+    return api.get('/tasks', { params });
+  },
+  createTask: async (data) => {
+    return api.post('/tasks', data);
+  },
+  getTask: async (taskId) => {
+    return api.get(`/tasks/${taskId}`);
+  },
+  updateTask: async (taskId, data) => {
+    return api.put(`/tasks/${taskId}`, data);
+  },
+  deleteTask: async (taskId) => {
+    return api.delete(`/tasks/${taskId}`);
+  },
+  changeStatus: async (taskId, status) => {
+    return api.patch(`/tasks/${taskId}/status`, { status });
+  },
+  assign: async (taskId, userId) => {
+    return api.patch(`/tasks/${taskId}/assign`, { assignee_id: userId });
+  }
+};
+
+export const subjectService = {
+  getAll: async () => api.get('/subjects'),
+  create: async (data) => api.post('/subjects', data),
+  update: async (id, data) => api.put(`/subjects/${id}`, data),
+  delete: async (id) => api.delete(`/subjects/${id}`)
+};
+
+export const classService = {
+  getAll: async () => api.get('/classes'),
+  create: async (data) => api.post('/classes', data),
+  update: async (id, data) => api.put(`/classes/${id}`, data),
+  delete: async (id) => api.delete(`/classes/${id}`)
+};
+
+export const semesterService = {
+  getAll: async () => api.get('/semesters'),
+  create: async (data) => api.post('/semesters', data),
+  delete: async (id) => api.delete(`/semesters/${id}`)
+
+
+};
+
+export const departmentService = {
+  getAll: async (params) => api.get('/departments', { params })
+};
+
+export const topicService = {
+  getAll: async (params) => api.get('/topics', { params }),
+  approve: async (topicId) => api.patch(`/topics/${topicId}/approve`),
+  reject: async (topicId) => api.patch(`/topics/${topicId}/reject`)
+};
+
+// Export default api instance just in case
 export default api;

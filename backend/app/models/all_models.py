@@ -15,10 +15,11 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    literal,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym, column_property
 
 from app.db.base import Base
 
@@ -93,7 +94,7 @@ class User(Base):
     created_topics: Mapped[list["Topic"]] = relationship("Topic", back_populates="creator", foreign_keys="Topic.creator_id")
     created_milestones: Mapped[list["Milestone"]] = relationship("Milestone", back_populates="creator", foreign_keys="Milestone.created_by")
     evaluations: Mapped[list["Evaluation"]] = relationship("Evaluation", back_populates="evaluator", foreign_keys="Evaluation.evaluator_id")
-    mentoring_logs: Mapped[list["MentoringLog"]] = relationship("MentoringLog", back_populates="lecturer", foreign_keys="MentoringLog.lecturer_id")
+    mentoring_logs: Mapped[list["MentoringLog"]] = relationship("MentoringLog", back_populates="mentor", foreign_keys="MentoringLog.mentor_id")
 
     # Student relations
     enrollments: Mapped[list["ClassEnrollment"]] = relationship("ClassEnrollment", back_populates="student")
@@ -110,6 +111,9 @@ class User(Base):
     # Peer Reviews
     peer_reviews_given: Mapped[list["PeerReview"]] = relationship("PeerReview", back_populates="reviewer", foreign_keys="PeerReview.reviewer_id")
     peer_reviews_received: Mapped[list["PeerReview"]] = relationship("PeerReview", back_populates="reviewee", foreign_keys="PeerReview.reviewee_id")
+    
+    # Notifications
+    notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="user")
 
 
 class SystemSetting(Base):
@@ -224,7 +228,7 @@ class Topic(Base):
     requirements: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Added
     creator_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id")) # This maps to created_by in API logic if we adjust API or here
     created_by: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added for compatibility
-    dept_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("departments.dept_id"), nullable=True) # Made nullable
+    dept_id: Mapped[int] = mapped_column(Integer, ForeignKey("departments.dept_id"))
     status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     approved_by: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added
@@ -259,11 +263,11 @@ class Team(Base):
     leader_id: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Made nullable
     created_by: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added
     class_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("academic_classes.class_id"), nullable=True) # Made nullable
-    name: Mapped[Optional[str]] = mapped_column(String, nullable=True) # Added alias for ease, or we use team_name
     team_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # Added
+    name: Mapped[Optional[str]] = synonym("team_name")
+    description: Mapped[Optional[str]] = column_property(literal(None))
     join_code: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    is_finalized: Mapped[bool] = mapped_column(Boolean, default=False) # Added
+    is_finalized: Mapped[bool] = column_property(join_code.is_(None))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     project: Mapped[Optional["Project"]] = relationship("Project", back_populates="teams")
@@ -285,14 +289,14 @@ class TeamMember(Base):
     __tablename__ = "team_members"
     # FIX: Added ondelete=CASCADE
     team_id: Mapped[int] = mapped_column(Integer, ForeignKey("teams.team_id", ondelete="CASCADE"), primary_key=True)
-    user_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True) # Changed from student_id to user_id to match API
-    # Removed student_id
+    student_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[UUID] = synonym("student_id")
     role: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     team: Mapped["Team"] = relationship("Team", back_populates="members")
-    student: Mapped["User"] = relationship("User", back_populates="team_memberships", foreign_keys=[user_id])
+    student: Mapped["User"] = relationship("User", back_populates="team_memberships", foreign_keys=[student_id])
 
 
 # ==========================================
@@ -491,13 +495,16 @@ class MentoringLog(Base):
     __tablename__ = "mentoring_logs"
     log_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     team_id: Mapped[int] = mapped_column(Integer, ForeignKey("teams.team_id", ondelete="CASCADE"))
-    lecturer_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"))
-    content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    meeting_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    mentor_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"))
+    session_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    discussion_points: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ai_suggestions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    meeting_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     team: Mapped["Team"] = relationship("Team", back_populates="mentoring_logs")
-    lecturer: Mapped["User"] = relationship("User", back_populates="mentoring_logs")
+    mentor: Mapped["User"] = relationship("User", back_populates="mentoring_logs")
 
 
 class Resource(Base):
@@ -512,3 +519,19 @@ class Resource(Base):
     uploader: Mapped["User"] = relationship("User", back_populates="uploaded_resources")
     academic_class: Mapped[Optional["AcademicClass"]] = relationship("AcademicClass", back_populates="resources")
     team: Mapped[Optional["Team"]] = relationship("Team", back_populates="resources")
+
+
+class Notification(Base):
+    """Notification model for user notifications."""
+    __tablename__ = "notifications"
+    notification_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"))
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    notification_type: Mapped[str] = mapped_column(String(50), default="info")  # info, warning, success, error
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    related_entity_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # task, team, message, etc.
+    related_entity_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    
+    user: Mapped["User"] = relationship("User", back_populates="notifications")

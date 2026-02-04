@@ -9,7 +9,7 @@ import time
 
 class TopicDAO:
     _cache = {}
-    _cache_ttl = 60  # 60 seconds
+    _cache_ttl = 0  # disabled to avoid stale status after approval
 
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -23,7 +23,7 @@ class TopicDAO:
         cache_key = f"topics_{status}"
         now = time.time()
         
-        if cache_key in self._cache:
+        if self._cache_ttl > 0 and cache_key in self._cache:
             data, timestamp = self._cache[cache_key]
             if now - timestamp < self._cache_ttl:
                 return data
@@ -38,8 +38,9 @@ class TopicDAO:
         result = await self.db.execute(query)
         topics = result.scalars().all()
         
-        # Update cache
-        self._cache[cache_key] = (topics, now)
+        # Update cache when enabled
+        if self._cache_ttl > 0:
+            self._cache[cache_key] = (topics, now)
         
         return topics
 
@@ -55,7 +56,7 @@ class TopicDAO:
         result = await self.db.execute(query)
         return result.scalar()
 
-    async def create_topic(self, topic_data: TopicCreate, creator_id: any) -> Topic:
+    async def create_topic(self, topic_data: TopicCreate, creator_id: any, dept_id: int) -> Topic:
         """
         Create a new topic. Invalidates cache.
         """
@@ -68,6 +69,7 @@ class TopicDAO:
             status="DRAFT",
             creator_id=creator_id,
             created_by=creator_id, 
+            dept_id=dept_id,
             created_at=datetime.datetime.now(datetime.timezone.utc)
         )
         
@@ -94,3 +96,9 @@ class TopicDAO:
         self._cache.clear()
         
         return topic
+
+    async def delete_topic(self, topic: Topic) -> None:
+        """Delete a topic and invalidate cache."""
+        await self.db.delete(topic)
+        await self.db.commit()
+        self._cache.clear()

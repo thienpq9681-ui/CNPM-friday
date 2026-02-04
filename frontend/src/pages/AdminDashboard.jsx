@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons';
 
 // Import services
-import { subjectService, classService, userService } from '../services/api';
+import { subjectService, classService, userService, departmentService, topicService } from '../services/api';
 import { useAuth } from '../components/AuthContext';
 
 const { Title, Text } = Typography;
@@ -19,9 +19,10 @@ const { Header, Sider, Content } = Layout;
 
 const AdminDashboard = () => {
   const [form] = Form.useForm();
+  const [permissionForm] = Form.useForm();
   const { logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
-  const [selectedKey, setSelectedKey] = useState('1'); // 1: Môn học, 2: Học kỳ, 3: Người dùng
+  const [selectedKey, setSelectedKey] = useState('1'); // 1: Môn học, 2: Học kỳ, 3: Người dùng, 4: Đề tài
 
   // Notification State
   const [isNotificationOpen, setNotificationOpen] = useState(false);
@@ -92,6 +93,9 @@ const AdminDashboard = () => {
   // Trạng thái Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingKey, setEditingKey] = useState(null);
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [departments, setDepartments] = useState([]);
 
   // --- LẤY DỮ LIỆU ---
   const fetchData = async () => {
@@ -109,18 +113,28 @@ const AdminDashboard = () => {
       } else if (selectedKey === '2') {
         res = await classService.getAll(params);
       } else if (selectedKey === '3') {
-        res = await userService.getAll(params);
+        res = await userService.getAll({ skip: 0, limit: 1000, search: searchText });
+      } else if (selectedKey === '4') {
+        res = await topicService.getAll({ status: params.search || undefined });
       }
 
       // Kiểm tra định dạng
-      const resultData = Array.isArray(res.data) ? res.data : [];
+      let resultData = [];
+      let totalCount = 0;
+      if (selectedKey === '4') {
+        resultData = Array.isArray(res.data?.topics) ? res.data.topics : [];
+        totalCount = res.data?.total ?? resultData.length;
+      } else {
+        resultData = Array.isArray(res.data) ? res.data : [];
+        totalCount = resultData.length;
+      }
       setData(resultData);
 
       // Vì backend chưa trả về tổng số lượng, nên ta giả lập phân trang hoặc giả định đơn giản
       // Để phân trang thực tế, phản hồi backend cần bao gồm tổng số.
       // Triển khai hiện tại trả về toàn bộ danh sách hoặc danh sách giới hạn.
       // Ta sẽ giả định độ dài dữ liệu là tổng số cho phiên bản đơn giản này trừ khi backend hỗ trợ đếm.
-      setTotal(resultData.length); // Placeholder, improving later
+      setTotal(totalCount); // Placeholder, improving later
 
     } catch (err) {
       console.error("API Error:", err);
@@ -134,6 +148,21 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchData();
   }, [selectedKey, pagination.current, searchText]);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await departmentService.getAll({ skip: 0, limit: 200 });
+        setDepartments(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        setDepartments([]);
+      }
+    };
+
+    if (selectedKey === '3') {
+      fetchDepartments();
+    }
+  }, [selectedKey]);
 
   // --- HÀNH ĐỘNG ---
   const handleDelete = (id) => {
@@ -176,6 +205,27 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleUpdatePermissions = async (values) => {
+    if (!selectedUser) return;
+    try {
+      if (values.role_id && values.role_id !== selectedUser.role_id) {
+        await userService.assignRole(selectedUser.user_id, values.role_id);
+      }
+
+      if (values.dept_id && values.dept_id !== selectedUser.dept_id) {
+        await userService.assignDepartment(selectedUser.user_id, values.dept_id);
+      }
+
+      message.success('Permissions updated successfully');
+      setIsPermissionModalOpen(false);
+      setSelectedUser(null);
+      permissionForm.resetFields();
+      fetchData();
+    } catch (err) {
+      message.error(err.response?.data?.detail || 'Failed to update permissions');
+    }
+  };
+
   // --- CỘT ---
   const getColumns = () => {
     const commonActions = {
@@ -212,11 +262,89 @@ const AdminDashboard = () => {
         commonActions
       ];
     } else if (selectedKey === '3') { // NGƯỜI DÙNG
+      const roleNameMap = {
+        1: 'Admin',
+        2: 'Staff',
+        3: 'Head_Dept',
+        4: 'Lecturer',
+        5: 'Student'
+      };
       return [
         { title: 'Email', dataIndex: 'email', key: 'email' },
         { title: 'Full Name', dataIndex: 'full_name', key: 'full_name' },
-        { title: 'Role', dataIndex: 'role_name', key: 'role_name' },
-        { title: 'Status', dataIndex: 'is_active', key: 'is_active', render: (val) => val ? <Badge status="success" text="Active" /> : <Badge status="error" text="Inactive" /> }
+        {
+          title: 'Role',
+          dataIndex: 'role_id',
+          key: 'role_id',
+          render: (val) => roleNameMap[val] || val
+        },
+        { title: 'Dept ID', dataIndex: 'dept_id', key: 'dept_id' },
+        { title: 'Status', dataIndex: 'is_active', key: 'is_active', render: (val) => val ? <Badge status="success" text="Active" /> : <Badge status="error" text="Inactive" /> },
+        {
+          title: 'Actions',
+          key: 'action',
+          render: (_, record) => (
+            <Space>
+              <Button size="small" onClick={() => {
+                setSelectedUser(record);
+                permissionForm.setFieldsValue({
+                  role_id: record.role_id,
+                  dept_id: record.dept_id || undefined
+                });
+                setIsPermissionModalOpen(true);
+              }}>
+                Set Permission
+              </Button>
+            </Space>
+          )
+        }
+      ];
+    } else if (selectedKey === '4') { // ĐỀ TÀI
+      return [
+        { title: 'Topic ID', dataIndex: 'topic_id', key: 'topic_id' },
+        { title: 'Title', dataIndex: 'title', key: 'title' },
+        { title: 'Status', dataIndex: 'status', key: 'status' },
+        { title: 'Created By', dataIndex: 'created_by', key: 'created_by' },
+        {
+          title: 'Actions',
+          key: 'action',
+          render: (_, record) => (
+            <Space>
+              <Button
+                size="small"
+                type="primary"
+                disabled={record.status === 'APPROVED'}
+                onClick={async () => {
+                  try {
+                    await topicService.approve(record.topic_id);
+                    message.success('Topic approved');
+                    fetchData();
+                  } catch (err) {
+                    message.error(err.response?.data?.detail || 'Approve failed');
+                  }
+                }}
+              >
+                Approve
+              </Button>
+              <Button
+                size="small"
+                danger
+                disabled={record.status === 'REJECTED'}
+                onClick={async () => {
+                  try {
+                    await topicService.reject(record.topic_id);
+                    message.success('Topic rejected');
+                    fetchData();
+                  } catch (err) {
+                    message.error(err.response?.data?.detail || 'Reject failed');
+                  }
+                }}
+              >
+                Reject
+              </Button>
+            </Space>
+          )
+        }
       ];
     }
     return [];
@@ -227,6 +355,7 @@ const AdminDashboard = () => {
       case '1': return 'Subject Management';
       case '2': return 'Class Management';
       case '3': return 'User Management';
+      case '4': return 'Topic Management';
       default: return 'Dashboard';
     }
   };
@@ -251,7 +380,8 @@ const AdminDashboard = () => {
             { key: '1', icon: <BookOutlined />, label: 'Subject Management' },
             { key: '2', icon: <TeamOutlined />, label: 'Class Management' },
             { key: '3', icon: <UserOutlined />, label: 'User Management' },
-            { key: '4', icon: <SettingOutlined />, label: 'System Settings' },
+            { key: '4', icon: <SettingOutlined />, label: 'Topic Management' },
+            { key: '5', icon: <SettingOutlined />, label: 'System Settings' },
           ]}
         />
       </Sider>
@@ -268,7 +398,7 @@ const AdminDashboard = () => {
                 open={isNotificationOpen}
                 onOpenChange={setNotificationOpen}
                 overlayStyle={{ padding: 0 }}
-                arrowPointAtCenter
+                arrow={{ pointAtCenter: true }}
                 getPopupContainer={() => notificationAnchorRef.current || document.body}
               >
                 <Badge dot offset={[-5, 5]}>
@@ -301,7 +431,7 @@ const AdminDashboard = () => {
                     allowClear
                     style={{ width: 300, borderRadius: '6px' }}
                   />
-                  {selectedKey !== '3' && (
+                  {selectedKey !== '3' && selectedKey !== '4' && (
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingKey(null); form.resetFields(); setIsModalOpen(true); }} size="large">
                       Add New
                     </Button>
@@ -365,6 +495,45 @@ const AdminDashboard = () => {
               </Form.Item>
             </>
           )}
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Update User Permissions"
+        open={isPermissionModalOpen}
+        onOk={() => permissionForm.submit()}
+        onCancel={() => {
+          setIsPermissionModalOpen(false);
+          setSelectedUser(null);
+          permissionForm.resetFields();
+        }}
+        okText="Save"
+        cancelText="Cancel"
+        destroyOnClose
+      >
+        <Form form={permissionForm} layout="vertical" onFinish={handleUpdatePermissions}>
+          <Form.Item name="role_id" label="Role" rules={[{ required: true }]}
+          >
+            <Select
+              options={[
+                { value: 1, label: 'Admin' },
+                { value: 2, label: 'Staff' },
+                { value: 3, label: 'Head_Dept' },
+                { value: 4, label: 'Lecturer' },
+                { value: 5, label: 'Student' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item name="dept_id" label="Department">
+            <Select
+              allowClear
+              placeholder="Select department"
+              options={departments.map((dept) => ({
+                value: dept.dept_id,
+                label: `${dept.dept_name} (ID: ${dept.dept_id})`
+              }))}
+            />
+          </Form.Item>
         </Form>
       </Modal>
     </Layout>

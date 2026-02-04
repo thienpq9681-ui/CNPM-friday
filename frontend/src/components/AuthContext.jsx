@@ -46,7 +46,7 @@ export const getDefaultDashboardPath = (user) => {
     if (roleName === 'LECTURER') {
         return '/lecturer';
     }
-    return '/dashboard';
+    return '/student';
 };
 
 const AuthContext = createContext();
@@ -233,6 +233,14 @@ export const AuthProvider = ({ children }) => {
         }
         setIsAuthReady(true);
     }, []);
+
+    useEffect(() => {
+        if (token) {
+            axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
+        } else {
+            delete axiosInstance.defaults.headers.common.Authorization;
+        }
+    }, [token]);
 
     useEffect(() => {
         if (!isAuthReady) {

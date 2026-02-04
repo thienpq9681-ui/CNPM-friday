@@ -6,7 +6,7 @@ from typing import Optional
 
 from app.db.session import get_db
 from app.api.deps import get_current_user
-from app.models.all_models import User, Topic, Evaluation
+from app.models.all_models import User, Topic, Evaluation, Project
 from app.schemas.topic import (
     TopicCreate, TopicUpdate, TopicResponse, EvaluationCreate, EvaluationResponse
 )
@@ -33,8 +33,15 @@ async def create_topic(
             detail="Only lecturers can create topics"
         )
     
+    resolved_dept_id = topic.dept_id or current_user.dept_id
+    if not resolved_dept_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="dept_id is required (assign a department or pass dept_id)."
+        )
+    
     dao = TopicDAO(db)
-    new_topic = await dao.create_topic(topic, current_user.user_id)
+    new_topic = await dao.create_topic(topic, current_user.user_id, resolved_dept_id)
     
     return {
         "topic_id": new_topic.topic_id,
@@ -46,6 +53,7 @@ async def create_topic(
         "status": new_topic.status,
         "created_by": current_user.full_name,
         "creator_id": new_topic.creator_id,
+        "dept_id": new_topic.dept_id,
         "created_at": new_topic.created_at
     }
 
@@ -70,6 +78,9 @@ async def get_topics(
     
     topics_response = []
     for t in topics:
+        status_value = t.status
+        if (t.approved_at or t.approved_by) and status_value != "APPROVED":
+            status_value = "APPROVED"
         topics_response.append({
             "topic_id": t.topic_id,
             "title": t.title,
@@ -77,11 +88,13 @@ async def get_topics(
             "requirements": t.requirements,
             "objectives": t.objectives,
             "tech_stack": t.tech_stack,
-            "status": t.status,
+            "status": status_value,
             "created_by": t.creator.full_name if t.creator else "Unknown",
             "creator_id": t.creator_id,
             "dept_id": t.dept_id,
-            "created_at": t.created_at
+            "created_at": t.created_at,
+            "approved_by": t.approved_by,
+            "approved_at": t.approved_at
         })
     
     return {
@@ -112,6 +125,10 @@ async def get_topic_detail(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only view approved topics"
         )
+
+    status_value = topic.status
+    if (topic.approved_at or topic.approved_by) and status_value != "APPROVED":
+        status_value = "APPROVED"
     
     approver_name = None
     if topic.approved_by:
@@ -201,10 +218,47 @@ async def reject_topic(
         "rejected_at": updated_topic.approved_at
     }
 
+
+@router.delete("/{topic_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_topic(
+    topic_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete a topic (Lecturer owner or Admin/Head_Dept).
+    """
+    dao = TopicDAO(db)
+    topic = await dao.get_topic_by_id(topic_id)
+
+    if not topic:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found")
+
+    is_owner = topic.creator_id == current_user.user_id
+    is_admin_or_head = current_user.role_id in [1, 3]
+    is_lecturer = current_user.role_id == 4
+
+    if not (is_admin_or_head or (is_lecturer and is_owner)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this topic"
+        )
+
+    project_check = await db.execute(
+        select(Project.project_id).where(Project.topic_id == topic_id)
+    )
+    if project_check.scalar() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete topic with existing projects"
+        )
+
+    await dao.delete_topic(topic)
+    return None
+
 # ============================================================================
 # EVALUATION ENDPOINTS
 # ============================================================================
-
 @router.post("/{topic_id}/evaluate", response_model=EvaluationResponse)
 async def create_evaluation(
     topic_id: int,

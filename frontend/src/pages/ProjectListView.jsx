@@ -7,18 +7,18 @@ import {
   DashboardOutlined, TeamOutlined, DesktopOutlined, TableOutlined,
   FileTextOutlined, VideoCameraOutlined, SendOutlined, FormOutlined,
   LogoutOutlined, UserOutlined, AppstoreOutlined, ProjectOutlined,
-  MenuOutlined, DownOutlined,
+  MenuOutlined, DownOutlined, MessageOutlined,
   LeftOutlined, RightOutlined
 } from '@ant-design/icons';
 import { Dropdown, Menu } from 'antd';
 
-import { subjectService, projectService } from '../services/api';
+import { projectService } from '../services/api';
 import { useAuth, resolveRoleName } from '../components/AuthContext';
 
 const { Title, Text } = Typography;
 const { Header, Sider, Content } = Layout;
 
-import './DashboardPage.css';
+import './StudentDashboard.css';
 
 const ProjectListView = () => {
   const navigate = useNavigate();
@@ -32,7 +32,9 @@ const ProjectListView = () => {
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [searchText, setSearchText] = useState('');
 
-  // Data State
+
+
+  // Trạng thái Dữ liệu
   const [allData, setAllData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -164,12 +166,27 @@ const ProjectListView = () => {
       setLoading(true);
       try {
         const res = await projectService.getAll();
-        // Duplicate data to match original 16 items behavior if desired, or just use res.data
-        // The original code did [...initialData, ...initialData]
-        const fetchedData = res.data || [];
-        setAllData(fetchedData);
+        const rawData = res.data || [];
+        // Map data to have 'key' for Antd Table
+        const mappedData = rawData.map(item => {
+          const topicTitle = item?.topic?.title || item.topic_title || item.project_name || item.topic || 'Untitled Project';
+          const proposerName = item?.topic?.creator_id || item.proposer || '-';
+          const startedAt = item?.topic?.created_at || item.created_at || item.date || 'N/A';
+
+          return {
+            ...item,
+            topic: topicTitle,
+            proposer: proposerName,
+            date: startedAt,
+            key: item.id || item.project_id || item.key || Math.random().toString(),
+            // Ensure id is present for claim
+            id: item.id || item.project_id
+          };
+        });
+        setAllData(mappedData);
       } catch (error) {
         console.error("Failed to fetch projects", error);
+        message.error("Failed to load projects");
       } finally {
         setLoading(false);
       }
@@ -179,17 +196,32 @@ const ProjectListView = () => {
 
   const handleChooseProject = async (record) => {
     try {
-      if (record.status === 'Claimed') {
+      const normalizedStatus = String(record.status || '').toUpperCase();
+      const isClaimed = normalizedStatus === 'CLAIMED';
+      const isApproved = normalizedStatus === 'APPROVED' || normalizedStatus === 'ACTIVE';
+
+      if (isClaimed) {
         message.warning('This project is already claimed!');
         return;
       }
 
-      await projectService.update(record.key, { status: 'Claimed' });
+      if (!isApproved) {
+        message.warning('This project is not approved yet.');
+        return;
+      }
+
+      await projectService.claim(record.id);
       message.success('Project claimed successfully!');
 
+      // Update local state to reflect change immediately
+      setAllData(prev => prev.map(item =>
+        item.key === record.key ? { ...item, status: 'Claimed' } : item
+      ));
+
+      // Update legacy local storage if needed for other components
       const activeItems = readActiveProjects();
       const nextItem = {
-        id: record.key,
+        id: record.id || record.key,
         title: record.topic || record.title || 'Untitled Project',
         description: `${record.category || 'Project'} • ${record.date || 'N/A'}`,
         iconType: 'project',
@@ -199,13 +231,9 @@ const ProjectListView = () => {
         : [nextItem, ...activeItems];
       writeActiveProjects(nextItems);
 
-      // Update local state
-      setAllData(prev => prev.map(item =>
-        item.key === record.key ? { ...item, status: 'Claimed' } : item
-      ));
     } catch (error) {
       console.error(error);
-      message.error('Failed to claim project');
+      message.error('Failed to join project');
     }
   };
   const handleLogout = () => {
@@ -340,20 +368,36 @@ const ProjectListView = () => {
   const nextMonth = () => setCurrentDate(currentDate.add(1, 'month'));
   const prevMonth = () => setCurrentDate(currentDate.subtract(1, 'month'));
 
-  const categories = [...new Set(allData.map(item => item.category))];
+  // Loại bỏ dữ liệu trùng lặp dựa trên key (Project ID)
+  const uniqueData = useMemo(() => {
+    const seen = new Set();
+    return allData.filter(item => {
+      const duplicate = seen.has(item.key);
+      seen.add(item.key);
+      return !duplicate;
+    });
+  }, [allData]);
+
+  const topics = [...new Set(uniqueData.map(item => item.topic))];
 
   // Logic tìm kiếm & lọc kết hợp
-  const sortedDataSource = allData
+  const sortedDataSource = uniqueData
     .filter(item => {
       const searchKey = searchText.trim().toLowerCase();
-      const matchesCategory = selectedCategory ? item.category === selectedCategory : true;
-      const matchesSearch = item.topic.toLowerCase().includes(searchKey);
-      return matchesCategory && matchesSearch;
+      // Sử dụng trạng thái selectedCategory để lưu Topic đã chọn
+      const topicValue = String(item.topic || '');
+      const matchesTopic = selectedCategory ? topicValue === selectedCategory : true;
+      const matchesSearch = topicValue.toLowerCase().includes(searchKey);
+      return matchesTopic && matchesSearch;
     })
     .sort((a, b) => {
+      const statusA = String(a.status || '').toUpperCase();
+      const statusB = String(b.status || '').toUpperCase();
+      const isClaimedA = statusA === 'CLAIMED';
+      const isClaimedB = statusB === 'CLAIMED';
       // Ưu tiên "Claimed" status
-      if (a.status === 'Claimed' && b.status !== 'Claimed') return 1;
-      if (a.status !== 'Claimed' && b.status === 'Claimed') return -1;
+      if (isClaimedA && !isClaimedB) return 1;
+      if (!isClaimedA && isClaimedB) return -1;
       // Sort bằng topic
       return a.topic.localeCompare(b.topic);
     });
@@ -366,41 +410,51 @@ const ProjectListView = () => {
     }
   };
 
-  const menu = (
-    <Menu onClick={handleMenuClick}>
-      <Menu.Item key="all">All Categories</Menu.Item>
-      {categories.map(cat => (
-        <Menu.Item key={cat}>{cat}</Menu.Item>
-      ))}
-    </Menu>
-  );
+  const menuItems = [
+    { key: 'all', label: 'All Topics' },
+    ...topics.map(t => ({ key: t, label: t }))
+  ];
+
+  const menuProps = {
+    items: menuItems,
+    onClick: handleMenuClick
+  };
 
   const columns = [
     { title: 'Proposer', dataIndex: 'proposer', key: 'proposer', width: 120 },
     { title: 'Topic title', dataIndex: 'topic', key: 'topic' },
-    { title: 'Category', dataIndex: 'category', key: 'category', width: 100 },
+    { title: 'Project ID', dataIndex: 'key', key: 'key', width: 100 }, // Changed from Category
+
     { title: 'Date started', dataIndex: 'date', key: 'date', width: 120 },
     { title: 'Status', dataIndex: 'status', key: 'status', width: 100 },
     {
       title: 'Activity',
       key: 'activity',
       width: 100,
-      render: (_, record) => (
-        <Button
-          size="small"
-          type="default"
-          style={{
-            background: record.status === 'Claimed' ? '#d9d9d9' : '#1890ff',
-            color: record.status === 'Claimed' ? '#00000040' : '#fff',
-            border: 'none',
-            cursor: record.status === 'Claimed' ? 'not-allowed' : 'pointer'
-          }}
-          onClick={() => handleChooseProject(record)}
-          disabled={record.status === 'Claimed'}
-        >
-          {record.status === 'Claimed' ? 'Claimed' : 'Choose'}
-        </Button>
-      )
+      render: (_, record) => {
+        const normalizedStatus = String(record.status || '').toUpperCase();
+        const isClaimed = normalizedStatus === 'CLAIMED';
+        const isApproved = normalizedStatus === 'APPROVED' || normalizedStatus === 'ACTIVE';
+        const isDisabled = isClaimed || !isApproved;
+        const label = isClaimed ? 'Claimed' : (isApproved ? 'Join' : 'Pending');
+
+        return (
+          <Button
+            size="small"
+            type="default"
+            style={{
+              background: isDisabled ? '#d9d9d9' : '#1890ff',
+              color: isDisabled ? '#00000040' : '#fff',
+              border: 'none',
+              cursor: isDisabled ? 'not-allowed' : 'pointer'
+            }}
+            onClick={() => handleChooseProject(record)}
+            disabled={isDisabled}
+          >
+            {label}
+          </Button>
+        );
+      }
     },
   ];
 
@@ -410,7 +464,7 @@ const ProjectListView = () => {
 
   return (
     <Layout className="dashboard-layout" style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-      {/* Top Header */}
+      {/* Phần đầu trang (Header) */}
       <Header className="dashboard-header" style={{
         position: 'fixed',
         top: 0,
@@ -437,7 +491,7 @@ const ProjectListView = () => {
               open={isNotificationOpen}
               onOpenChange={setNotificationOpen}
               overlayStyle={{ padding: 0 }}
-              arrowPointAtCenter
+              arrow={{ pointAtCenter: true }}
               getPopupContainer={() => notificationAnchorRef.current || document.body}
             >
               <Badge dot offset={[-5, 5]}>
@@ -511,7 +565,9 @@ const ProjectListView = () => {
               <Avatar size={collapsed ? 40 : 64} src={avatarUrl} style={{ backgroundColor: '#d9d9d9', marginRight: collapsed ? 0 : 16 }} />
               {!collapsed && (
                 <div>
-                  <Title level={4} style={{ margin: 0, fontWeight: 'normal', whiteSpace: 'nowrap' }}>Hi <span style={{ color: '#1890ff' }}>{userData.name.split(' ').pop()}</span>!</Title>
+                  <Title level={4} style={{ margin: 0, fontWeight: 'normal', whiteSpace: 'nowrap' }}>Hi <span style={{ color: '#1890ff' }}>
+                    {userData.name.split(' ').pop().charAt(0).toUpperCase() + userData.name.split(' ').pop().slice(1).toLowerCase()}
+                  </span>!</Title>
                   <Text type="secondary">
                     {(resolveRoleName(user) || 'Student')
                       .split('_')
@@ -529,7 +585,7 @@ const ProjectListView = () => {
                   type="text"
                   block
                   icon={<DashboardOutlined />}
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/student')}
                   {...navButtonInteractions('dashboard')}
                 >
                   {!collapsed && "Dashboard"}
@@ -538,6 +594,7 @@ const ProjectListView = () => {
                   type="text"
                   block
                   icon={<TeamOutlined />}
+                  onClick={() => navigate('/teams')}
                   {...navButtonInteractions('team')}
                 >
                   {!collapsed && "Team Management"}
@@ -545,7 +602,17 @@ const ProjectListView = () => {
                 <Button
                   type="text"
                   block
+                  icon={<MessageOutlined />}
+                  onClick={() => navigate('/team-chat')}
+                  {...navButtonInteractions('team-chat')}
+                >
+                  {!collapsed && "Team Chat"}
+                </Button>
+                <Button
+                  type="text"
+                  block
                   icon={<DesktopOutlined />}
+                  onClick={() => message.info('Tính năng đang phát triển')}
                   {...navButtonInteractions('workspace')}
                 >
                   {!collapsed && "Real-time Workspace"}
@@ -554,6 +621,7 @@ const ProjectListView = () => {
                   type="text"
                   block
                   icon={<TableOutlined />}
+                  onClick={() => navigate('/kanban')}
                   {...navButtonInteractions('kanban')}
                 >
                   {!collapsed && "Kanban Board Detail"}
@@ -562,6 +630,7 @@ const ProjectListView = () => {
                   type="text"
                   block
                   icon={<FormOutlined />}
+                  onClick={() => message.info('Tính năng đang phát triển')}
                   {...navButtonInteractions('whiteboard')}
                 >
                   {!collapsed && "Whiteboard Canvas"}
@@ -570,6 +639,7 @@ const ProjectListView = () => {
                   type="text"
                   block
                   icon={<VideoCameraOutlined />}
+                  onClick={() => message.info('Tính năng đang phát triển')}
                   {...navButtonInteractions('video')}
                 >
                   {!collapsed && "Video Meeting Room"}
@@ -578,6 +648,7 @@ const ProjectListView = () => {
                   type="text"
                   block
                   icon={<SendOutlined />}
+                  onClick={() => message.info('Tính năng đang phát triển')}
                   {...navButtonInteractions('submission')}
                 >
                   {!collapsed && "Submission Portal"}
@@ -586,6 +657,7 @@ const ProjectListView = () => {
                   type="text"
                   block
                   icon={<FileTextOutlined />}
+                  onClick={() => message.info('Tính năng đang phát triển')}
                   {...navButtonInteractions('peer')}
                 >
                   {!collapsed && "Peer Review Form"}
@@ -631,8 +703,10 @@ const ProjectListView = () => {
           minHeight: 'calc(100vh - 64px)'
         }}>
           <div style={{ marginBottom: 24 }}>
-            <Title level={2} style={{ margin: '0 0 8px 0', fontWeight: 'normal' }}>Project List View</Title>
-            <Text style={{ fontSize: '16px' }}>List of topics for students to choose</Text>
+            <div>
+              <Title level={2} style={{ margin: '0 0 8px 0', fontWeight: 'normal' }}>Project List View</Title>
+              <Text style={{ fontSize: '16px' }}>List of topics for students to choose</Text>
+            </div>
           </div>
 
           {/* Tìm kiếm và Lọc */}
@@ -654,9 +728,9 @@ const ProjectListView = () => {
               />
             </Col>
             <Col>
-              <Dropdown overlay={menu} trigger={['click']}>
+              <Dropdown menu={menuProps} trigger={['click']}>
                 <Button style={{ background: '#fff', border: '1px solid #d9d9d9', borderRadius: 6, height: '40px' }}>
-                  {selectedCategory ? selectedCategory : 'Sort by category'} <DownOutlined />
+                  {selectedCategory ? selectedCategory : 'Sort by Topic title'} <DownOutlined />
                 </Button>
               </Dropdown>
             </Col>
@@ -670,6 +744,7 @@ const ProjectListView = () => {
             pagination={false}
             scroll={{ y: 600 }}
             rowClassName={(record, index) => index % 2 === 0 ? 'table-row-light' : 'table-row-light'}
+            locale={{ emptyText: 'No projects available' }}
             style={{
               borderRadius: 8,
               overflow: 'hidden',
@@ -701,7 +776,7 @@ const ProjectListView = () => {
             padding: '24px'
           }}
         >
-          {/* CALENDAR SECTION */}
+          {/* PHẦN LỊCH */}
           <div style={{
             background: '#fff',
             borderRadius: 12,
@@ -738,7 +813,7 @@ const ProjectListView = () => {
             </div>
           </div>
 
-          {/* Recent Activities */}
+          {/* Hoạt động gần đây */}
           <div style={{ marginBottom: 24 }}>
             <Title level={5} style={{ marginBottom: 12 }}>Recent activities</Title>
             <div style={{ background: '#f5f5f5', borderRadius: 12, padding: '16px', minHeight: 150 }}>
@@ -758,7 +833,7 @@ const ProjectListView = () => {
             </div>
           </div>
 
-          {/* Optional: Additional widget */}
+          {/* Tùy chọn: Widget bổ sung */}
           <div style={{
             background: '#f9f0ff',
             borderRadius: 12,

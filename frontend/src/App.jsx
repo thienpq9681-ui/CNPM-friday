@@ -3,11 +3,17 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ProjectListView from './pages/ProjectListView';
 import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/AdminDashboard';
-import DashboardPage from './pages/DashboardPage';
+import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
 import TopicManagement from './pages/TopicManagement';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import TeamManagement from './pages/TeamManagement';
+import TeamDetail from './pages/TeamDetail';
+import KanBanBoard from './pages/KanBanBoard';
+import TeamChat from './pages/TeamChat';
+import MentoringPage from './pages/MentoringPage';
+import PeerReviewPage from './pages/PeerReviewPage';
 import { useAuth, getDefaultDashboardPath, resolveRoleName } from './components/AuthContext';
 
 const adminRoleGate = ['ADMIN', 'STAFF', 'HEAD_DEPT'];
@@ -72,11 +78,17 @@ const App = () => (
     <Route path="/" element={<LandingRedirect />} />
     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
     <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-    <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+    <Route path="/student" element={<ProtectedRoute allowedRoles={['STUDENT']}><StudentDashboard /></ProtectedRoute>} />
     <Route path="/lecturer" element={<ProtectedRoute allowedRoles={['LECTURER']}><LecturerDashboard /></ProtectedRoute>} />
     <Route path="/topics" element={<ProtectedRoute><TopicManagement /></ProtectedRoute>} />
     <Route path="/projects" element={<ProtectedRoute><ProjectListView /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+    <Route path="/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
+    <Route path="/teams/:teamId" element={<ProtectedRoute><TeamDetail /></ProtectedRoute>} />
+    <Route path="/team-chat" element={<ProtectedRoute><TeamChat /></ProtectedRoute>} />
+    <Route path="/mentoring" element={<ProtectedRoute><MentoringPage /></ProtectedRoute>} />
+    <Route path="/peer" element={<ProtectedRoute><PeerReviewPage /></ProtectedRoute>} />
+    <Route path="/kanban" element={<ProtectedRoute><KanBanBoard /></ProtectedRoute>} />
     <Route path="/admin" element={<ProtectedRoute allowedRoles={adminRoleGate}><AdminDashboard /></ProtectedRoute>} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
