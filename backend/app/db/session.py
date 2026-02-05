@@ -6,13 +6,13 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
 
-# Create async engine with connection pooling
+# Create async engine with connection pooling (Standard for Session Mode / Port 5432)
 engine: AsyncEngine = create_async_engine(
     settings.DATABASE_URL,
-    echo=False,  # Set to True for SQL query logging in development
-    pool_pre_ping=True,  # Test connections before use
-    pool_size=10,  # Maximum number of connections in the pool
-    max_overflow=20,  # Maximum number of connections that can be created beyond pool_size
+    echo=False,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
 )
 
 # Create async session factory

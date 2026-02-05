@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
@@ -5,17 +6,28 @@ from typing import List
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
+    # Get absolute path to .env file (backend/.env)
+    # config.py is in app/core/, so go up 3 levels to backend/
+    ROOT_DIR: str = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ENV_PATH: str = os.path.join(ROOT_DIR, ".env")
+
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_PATH,
         case_sensitive=True,
+        extra="ignore"
     )
     
     # Project
     PROJECT_NAME: str = "CollabSphere API"
     API_V1_STR: str = "/api/v1"
     
-    # Database
+    # Database - Can use Supabase PostgreSQL or local PostgreSQL
+    # For Supabase, use format: postgresql://user:password@host:port/database
     DATABASE_URL: str = "postgresql://collabsphere:collabsphere_password@localhost:5432/collabsphere_db"
+    
+    # Supabase (optional)
+    SUPABASE_URL: str = ""  # e.g., https://csvlvzkucubqlfnuuizk.supabase.co
+    SUPABASE_KEY: str = ""  # Use anon key for client, service_role key for server
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

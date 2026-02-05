@@ -45,10 +45,14 @@ class Department(Base):
     dept_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     dept_name: Mapped[str] = mapped_column(String, unique=True)
     dept_head_id: Mapped[Optional[UUID]] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.user_id", use_alter=True), nullable=True
+        PG_UUID(as_uuid=True), ForeignKey("users.user_id", use_alter=True, name="fk_departments_head"), nullable=True
     )
 
-    users: Mapped[list["User"]] = relationship("User", back_populates="department")
+    users: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="department",
+        foreign_keys="User.dept_id",
+    )
     subjects: Mapped[list["Subject"]] = relationship("Subject", back_populates="department")
     topics: Mapped[list["Topic"]] = relationship("Topic", back_populates="department")
     dept_head: Mapped[Optional["User"]] = relationship("User", foreign_keys=[dept_head_id])
@@ -75,7 +79,11 @@ class User(Base):
 
     # Relationships
     role: Mapped["Role"] = relationship("Role", back_populates="users")
-    department: Mapped[Optional["Department"]] = relationship("Department", back_populates="users")
+    department: Mapped[Optional["Department"]] = relationship(
+        "Department",
+        back_populates="users",
+        foreign_keys=[dept_id],
+    )
 
     system_settings: Mapped[list["SystemSetting"]] = relationship("SystemSetting", back_populates="updated_by_user")
     audit_logs: Mapped[list["AuditLog"]] = relationship("AuditLog", back_populates="actor")
@@ -85,13 +93,13 @@ class User(Base):
     created_topics: Mapped[list["Topic"]] = relationship("Topic", back_populates="creator", foreign_keys="Topic.creator_id")
     created_milestones: Mapped[list["Milestone"]] = relationship("Milestone", back_populates="creator", foreign_keys="Milestone.created_by")
     evaluations: Mapped[list["Evaluation"]] = relationship("Evaluation", back_populates="evaluator", foreign_keys="Evaluation.evaluator_id")
-    mentoring_logs: Mapped[list["MentoringLog"]] = relationship("MentoringLog", back_populates="lecturer", foreign_keys="MentoringLog.lecturer_id")
+    mentoring_logs: Mapped[list["MentoringLog"]] = relationship("MentoringLog", back_populates="mentor", foreign_keys="MentoringLog.mentor_id")
 
     # Student relations
     enrollments: Mapped[list["ClassEnrollment"]] = relationship("ClassEnrollment", back_populates="student")
     led_teams: Mapped[list["Team"]] = relationship("Team", back_populates="leader", foreign_keys="Team.leader_id")
-    team_memberships: Mapped[list["TeamMember"]] = relationship("TeamMember", back_populates="student")
-    assigned_tasks: Mapped[list["Task"]] = relationship("Task", back_populates="assignee", foreign_keys="Task.assignee_id")
+    team_memberships: Mapped[list["TeamMember"]] = relationship("TeamMember", back_populates="student", foreign_keys="TeamMember.user_id") # Specified FK
+    assigned_tasks: Mapped[list["Task"]] = relationship("Task", back_populates="assignee", foreign_keys="Task.assigned_to") # Changed to assigned_to
     submissions: Mapped[list["Submission"]] = relationship("Submission", back_populates="submitter", foreign_keys="Submission.submitted_by")
     
     # Collaboration
@@ -102,6 +110,9 @@ class User(Base):
     # Peer Reviews
     peer_reviews_given: Mapped[list["PeerReview"]] = relationship("PeerReview", back_populates="reviewer", foreign_keys="PeerReview.reviewer_id")
     peer_reviews_received: Mapped[list["PeerReview"]] = relationship("PeerReview", back_populates="reviewee", foreign_keys="PeerReview.reviewee_id")
+    
+    # Notifications
+    notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="user")
 
 
 class SystemSetting(Base):
@@ -139,6 +150,7 @@ class Semester(Base):
     __tablename__ = "semesters"
     semester_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     semester_code: Mapped[str] = mapped_column(String, unique=True)
+    semester_name: Mapped[Optional[str]] = mapped_column(String, nullable=True) # Added
     start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
@@ -213,12 +225,16 @@ class Topic(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     objectives: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     tech_stack: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    creator_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"))
-    dept_id: Mapped[int] = mapped_column(Integer, ForeignKey("departments.dept_id"))
+    requirements: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Added
+    creator_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id")) # This maps to created_by in API logic if we adjust API or here
+    created_by: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added for compatibility
+    dept_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("departments.dept_id"), nullable=True) # Made nullable
     status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    approved_by: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True) # Added
 
-    creator: Mapped["User"] = relationship("User", back_populates="created_topics")
+    creator: Mapped["User"] = relationship("User", back_populates="created_topics", foreign_keys=[creator_id])
     department: Mapped["Department"] = relationship("Department", back_populates="topics")
     projects: Mapped[list["Project"]] = relationship("Project", back_populates="topic")
 
@@ -230,6 +246,10 @@ class Project(Base):
     class_id: Mapped[int] = mapped_column(Integer, ForeignKey("academic_classes.class_id"))
     project_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    claimed_by_id: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True)
+    claimed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    claimed_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[claimed_by_id])
 
     topic: Mapped["Topic"] = relationship("Topic", back_populates="projects")
     academic_class: Mapped["AcademicClass"] = relationship("AcademicClass", back_populates="projects")
@@ -240,14 +260,18 @@ class Team(Base):
     __tablename__ = "teams"
     team_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     project_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("projects.project_id"), nullable=True)
-    leader_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"))
-    class_id: Mapped[int] = mapped_column(Integer, ForeignKey("academic_classes.class_id"))
+    leader_id: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Made nullable
+    created_by: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added
+    class_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("academic_classes.class_id"), nullable=True) # Made nullable
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True) # Added alias for ease, or we use team_name
     team_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # Added
     join_code: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    is_finalized: Mapped[bool] = mapped_column(Boolean, default=False) # Added
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     project: Mapped[Optional["Project"]] = relationship("Project", back_populates="teams")
-    leader: Mapped["User"] = relationship("User", back_populates="led_teams")
+    leader: Mapped["User"] = relationship("User", back_populates="led_teams", foreign_keys=[leader_id])
     academic_class: Mapped["AcademicClass"] = relationship("AcademicClass", back_populates="teams")
 
     # FIX: Added Cascade delete for team artifacts
@@ -265,13 +289,14 @@ class TeamMember(Base):
     __tablename__ = "team_members"
     # FIX: Added ondelete=CASCADE
     team_id: Mapped[int] = mapped_column(Integer, ForeignKey("teams.team_id", ondelete="CASCADE"), primary_key=True)
-    student_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True) # Changed from student_id to user_id to match API
+    # Removed student_id
     role: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     team: Mapped["Team"] = relationship("Team", back_populates="members")
-    student: Mapped["User"] = relationship("User", back_populates="team_memberships")
+    student: Mapped["User"] = relationship("User", back_populates="team_memberships", foreign_keys=[user_id])
 
 
 # ==========================================
@@ -283,10 +308,13 @@ class Sprint(Base):
     __tablename__ = "sprints"
     sprint_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     team_id: Mapped[int] = mapped_column(Integer, ForeignKey("teams.team_id", ondelete="CASCADE"))
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True) # Added/Mapped title->name? API uses name
     title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now()) # Added
 
     team: Mapped["Team"] = relationship("Team", back_populates="sprints")
     tasks: Mapped[list["Task"]] = relationship("Task", back_populates="sprint", cascade="all, delete-orphan")
@@ -298,14 +326,20 @@ class Task(Base):
     sprint_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("sprints.sprint_id", ondelete="CASCADE"), nullable=True)
     title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    assignee_id: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True)
+    # Removed assignee_id, using assigned_to
+    assigned_to: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added alias match API
     priority: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True) # Added
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True) # Added
     due_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    blocked_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    depends_on: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("tasks.task_id"), nullable=True)
 
     sprint: Mapped[Optional["Sprint"]] = relationship("Sprint", back_populates="tasks")
-    assignee: Mapped[Optional["User"]] = relationship("User", back_populates="assigned_tasks")
+    assignee: Mapped[Optional["User"]] = relationship("User", back_populates="assigned_tasks", foreign_keys=[assigned_to])
+    dependent_on: Mapped[Optional["Task"]] = relationship("Task", remote_side=[task_id])
 
 
 class Meeting(Base):
@@ -413,13 +447,19 @@ class EvaluationCriterion(Base):
 class Evaluation(Base):
     __tablename__ = "evaluations"
     evaluation_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    submission_id: Mapped[int] = mapped_column(Integer, ForeignKey("submissions.submission_id", ondelete="CASCADE"))
+    submission_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("submissions.submission_id", ondelete="CASCADE"), nullable=True)
     evaluator_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"))
+    team_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("teams.team_id", ondelete="CASCADE"), nullable=True) # Added
+    topic_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("topics.topic_id"), nullable=True) # Added
+    project_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("projects.project_id"), nullable=True) # Added
+    
     total_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    score: Mapped[Optional[float]] = mapped_column(Float, nullable=True) # Alias to match TopicService
     feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    submission: Mapped["Submission"] = relationship("Submission", back_populates="evaluations")
+    submission: Mapped[Optional["Submission"]] = relationship("Submission", back_populates="evaluations")
     evaluator: Mapped["User"] = relationship("User", back_populates="evaluations")
     evaluation_details: Mapped[list["EvaluationDetail"]] = relationship("EvaluationDetail", back_populates="evaluation", cascade="all, delete-orphan")
 
@@ -455,13 +495,16 @@ class MentoringLog(Base):
     __tablename__ = "mentoring_logs"
     log_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     team_id: Mapped[int] = mapped_column(Integer, ForeignKey("teams.team_id", ondelete="CASCADE"))
-    lecturer_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"))
-    content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    meeting_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    mentor_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id"))
+    session_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    discussion_points: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ai_suggestions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    meeting_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     team: Mapped["Team"] = relationship("Team", back_populates="mentoring_logs")
-    lecturer: Mapped["User"] = relationship("User", back_populates="mentoring_logs")
+    mentor: Mapped["User"] = relationship("User", back_populates="mentoring_logs")
 
 
 class Resource(Base):
@@ -476,3 +519,19 @@ class Resource(Base):
     uploader: Mapped["User"] = relationship("User", back_populates="uploaded_resources")
     academic_class: Mapped[Optional["AcademicClass"]] = relationship("AcademicClass", back_populates="resources")
     team: Mapped[Optional["Team"]] = relationship("Team", back_populates="resources")
+
+
+class Notification(Base):
+    """Notification model for user notifications."""
+    __tablename__ = "notifications"
+    notification_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"))
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    notification_type: Mapped[str] = mapped_column(String(50), default="info")  # info, warning, success, error
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    related_entity_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # task, team, message, etc.
+    related_entity_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    
+    user: Mapped["User"] = relationship("User", back_populates="notifications")
