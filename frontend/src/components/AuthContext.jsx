@@ -46,7 +46,7 @@ export const getDefaultDashboardPath = (user) => {
     if (roleName === 'LECTURER') {
         return '/lecturer';
     }
-    return '/dashboard';
+    return '/student';
 };
 
 const AuthContext = createContext();

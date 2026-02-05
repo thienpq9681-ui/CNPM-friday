@@ -3,12 +3,19 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ProjectListView from './pages/ProjectListView';
 import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/AdminDashboard';
-import DashboardPage from './pages/DashboardPage';
+import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
 import TopicManagement from './pages/TopicManagement';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import TeamManagement from './pages/TeamManagement';
+import TeamDetail from './pages/TeamDetail';
+import KanBanBoard from './pages/KanBanBoard';
+import TeamMeetings from './pages/TeamMeetings';
+import SubmissionsPage from './pages/SubmissionsPage';
+import PeerReviewsPage from './pages/PeerReviewsPage';
 import { useAuth, getDefaultDashboardPath, resolveRoleName } from './components/AuthContext';
+import { initSocket, disconnectSocket } from './services/socketService';
 
 const adminRoleGate = ['ADMIN', 'STAFF', 'HEAD_DEPT'];
 
@@ -67,19 +74,37 @@ const LandingRedirect = () => {
   return <Navigate to="/login" replace />;
 };
 
-const App = () => (
-  <Routes>
-    <Route path="/" element={<LandingRedirect />} />
-    <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-    <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-    <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-    <Route path="/lecturer" element={<ProtectedRoute allowedRoles={['LECTURER']}><LecturerDashboard /></ProtectedRoute>} />
-    <Route path="/topics" element={<ProtectedRoute><TopicManagement /></ProtectedRoute>} />
-    <Route path="/projects" element={<ProtectedRoute><ProjectListView /></ProtectedRoute>} />
-    <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-    <Route path="/admin" element={<ProtectedRoute allowedRoles={adminRoleGate}><AdminDashboard /></ProtectedRoute>} />
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Routes>
-);
+const App = () => {
+  const { token } = useAuth();
+
+  React.useEffect(() => {
+    if (token) {
+      initSocket(token);
+    } else {
+      disconnectSocket();
+    }
+  }, [token]);
+
+  return (
+    <Routes>
+      <Route path="/" element={<LandingRedirect />} />
+      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+      <Route path="/student" element={<ProtectedRoute allowedRoles={['STUDENT']}><StudentDashboard /></ProtectedRoute>} />
+      <Route path="/lecturer" element={<ProtectedRoute allowedRoles={['LECTURER']}><LecturerDashboard /></ProtectedRoute>} />
+      <Route path="/topics" element={<ProtectedRoute><TopicManagement /></ProtectedRoute>} />
+      <Route path="/projects" element={<ProtectedRoute><ProjectListView /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+      <Route path="/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
+      <Route path="/teams/:teamId" element={<ProtectedRoute><TeamDetail /></ProtectedRoute>} />
+      <Route path="/kanban" element={<ProtectedRoute><KanBanBoard /></ProtectedRoute>} />
+      <Route path="/video" element={<ProtectedRoute><TeamMeetings /></ProtectedRoute>} />
+      <Route path="/submission" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+      <Route path="/peer-review" element={<ProtectedRoute><PeerReviewsPage /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={adminRoleGate}><AdminDashboard /></ProtectedRoute>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
 
 export default App;

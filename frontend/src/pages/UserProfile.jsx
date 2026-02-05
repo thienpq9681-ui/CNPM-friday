@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Layout, Row, Col, Typography, Button, Card, Avatar, Form, Input, Divider, message, Modal, Space, Tag } from 'antd';
 import { ArrowLeftOutlined, EditOutlined, UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 
-import { useAuth, resolveRoleName } from '../components/AuthContext';
+import { useAuth, resolveRoleName, getDefaultDashboardPath } from '../components/AuthContext';
+import { profileService } from '../services/api';
 
 const { Title, Text } = Typography;
 
@@ -70,6 +71,30 @@ const UserProfile = () => {
     }
   }, [user]);
 
+  // NEW: Fetch Profile from API
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await profileService.getMe();
+        if (response.data) {
+          const apiData = response.data;
+          setUserData(prev => ({
+            ...prev,
+            name: apiData.full_name || apiData.name || prev.name,
+            email: apiData.email || prev.email,
+            phone: apiData.phone_number || apiData.phone || prev.phone,
+            role: getDisplayRole(apiData) // Ensure role is updated if API returns it
+          }));
+          // Sync context
+          updateUser(apiData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile", error);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   // Lưu dữ liệu mỗi khi userData thay đổi (Optional: keep local sync for edits)
   useEffect(() => {
     if (!canUseStorage()) {
@@ -109,14 +134,31 @@ const UserProfile = () => {
     }
   };
 
-  const onUpdateProfile = (values) => {
-    setUserData(prev => ({ ...prev, ...values }));
-    updateUser({
-      full_name: values.name || user?.full_name,
-      email: values.email || user?.email,
-    });
-    message.success('Cập nhật thông tin thành công!');
-    setIsEditModalOpen(false);
+  const onUpdateProfile = async (values) => {
+    try {
+      const response = await profileService.updateMe(values);
+      const updatedData = response.data;
+
+      setUserData(prev => ({
+        ...prev,
+        ...values,
+        name: updatedData?.full_name || values.name,
+        email: updatedData?.email || values.email,
+        phone: updatedData?.phone_number || values.phone
+      }));
+
+      updateUser({
+        full_name: values.name || user?.full_name,
+        email: values.email || user?.email,
+        phone: values.phone || user?.phone_number,
+      });
+
+      message.success('Cập nhật thông tin thành công!');
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error("Failed to update profile", error);
+      message.error('Failed to update profile. Please try again.');
+    }
   };
 
   const handleUpdatePassword = async () => {
@@ -148,7 +190,7 @@ const UserProfile = () => {
         <Button
           type="text"
           icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/student')}
           style={{ marginBottom: 32, fontSize: '16px', padding: 0 }}
         >
           Back to dashboard

@@ -268,7 +268,7 @@ const AdminDashboard = () => {
                 open={isNotificationOpen}
                 onOpenChange={setNotificationOpen}
                 overlayStyle={{ padding: 0 }}
-                arrowPointAtCenter
+                arrow={{ pointAtCenter: true }}
                 getPopupContainer={() => notificationAnchorRef.current || document.body}
               >
                 <Badge dot offset={[-5, 5]}>
